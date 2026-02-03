@@ -5,7 +5,6 @@
  * Version:           0.1.0
  * Requires at least: 6.7
  * Requires PHP:      7.4
- * Requires Plugins:  liveblog
  * Author:            Peter Sorensen, Robots
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -58,22 +57,3 @@ function liveblog_liveblog_block_block_init() {
 	}
 }
 add_action( 'init', 'liveblog_liveblog_block_block_init' );
-
-/**
- * Register the liveblog post meta.
- */
-function liveblog_liveblog_block_register_post_meta() {
-	register_post_meta(
-		'',
-		'liveblog',
-		array(
-			'show_in_rest' => true,
-			'single'       => true,
-			'type'         => 'string',
-			'auth_callback' => function() {
-				return current_user_can( 'edit_posts' );
-			},
-		)
-	);
-}
-add_action( 'init', 'liveblog_liveblog_block_register_post_meta' );
