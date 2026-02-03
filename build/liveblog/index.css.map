@@ -1,0 +1,1 @@
+{"version":3,"file":"liveblog/index.css","mappings":";;;AAAA,gBAAgB;AAAhB;;EAAA;AAIA;EACC;EACA;AACD,C","sources":["webpack://liveblog-block/./src/liveblog/editor.scss"],"sourcesContent":["/**\n * Liveblog container – editor only.\n */\n\n.liveblog-container {\n\tborder: 1px dashed #ccc;\n\tpadding: 12px;\n}\n"],"names":[],"ignoreList":[],"sourceRoot":""}

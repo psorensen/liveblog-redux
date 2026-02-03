@@ -1,0 +1,62 @@
+/*!******************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./src/liveblog-entry/style.scss ***!
+  \******************************************************************************************************************************************************************************************************************************************************/
+@charset "UTF-8";
+/**
+ * Liveblog entry – front and editor.
+ */
+.liveblog-entry {
+  border-right: 4px solid #0073aa;
+  padding-right: 20px;
+  margin-bottom: 30px;
+  position: relative;
+}
+.liveblog-entry.has-modified {
+  border-right-color: #f0b849;
+}
+.liveblog-entry.is-pinned {
+  background: #f9f9f9;
+  border-right-color: #d63638;
+}
+.liveblog-entry__header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
+}
+.liveblog-entry__time {
+  font-weight: 500;
+}
+.liveblog-entry__edited {
+  font-style: italic;
+  color: #f0b849;
+}
+.liveblog-entry__content {
+  margin-top: 0;
+}
+.liveblog-entry-coauthors-list {
+  list-style: none;
+  margin: 0 0 8px 0;
+  padding: 0;
+}
+.liveblog-entry-coauthor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  margin-bottom: 4px;
+}
+.liveblog-entry-coauthor-remove {
+  padding: 0 4px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: #757575;
+  font-size: 18px;
+  line-height: 1;
+}
+.liveblog-entry-coauthor-remove:hover {
+  color: #d63638;
+}

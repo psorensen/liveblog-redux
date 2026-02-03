@@ -1,0 +1,1 @@
+{"version":3,"file":"liveblog-entry/index.css","mappings":";;;AAAA,gBAAgB;AAAhB;;EAAA;AAKC;EACC;AAAF,C","sources":["webpack://liveblog-block/./src/liveblog-entry/editor.scss"],"sourcesContent":["/**\n * Liveblog entry – editor only.\n */\n\n.liveblog-entry {\n\t.liveblog-entry__header {\n\t\tflex-wrap: wrap;\n\t}\n}\n"],"names":[],"ignoreList":[],"sourceRoot":""}
