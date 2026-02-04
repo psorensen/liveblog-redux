@@ -10,6 +10,7 @@ coverage
 
 # Build directory
 build
+vendor
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
