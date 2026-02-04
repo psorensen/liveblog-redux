@@ -86,13 +86,29 @@
 					el.className = 'liveblog-entry';
 					el.setAttribute( 'data-update-id', id );
 					if ( update.timestamp ) el.setAttribute( 'data-timestamp', update.timestamp );
-					if ( update.author ) {
-						const header = document.createElement( 'div' );
+					var hasAuthor = update.author || ( update.coauthors && update.coauthors.length > 0 );
+					if ( hasAuthor ) {
+						var header = document.createElement( 'div' );
 						header.className = 'liveblog-entry__header';
-						header.innerHTML = '<time class="liveblog-entry__time">' + formatTimestamp( update.timestamp ) + '</time> <span class="liveblog-entry__authors">' + escapeHtml( update.author ) + '</span>';
+						var timeHtml = '<time class="liveblog-entry__time">' + formatTimestamp( update.timestamp ) + '</time> ';
+						var authorsHtml = '';
+						if ( update.coauthors && update.coauthors.length > 0 ) {
+							var avatars = update.coauthors.map( function ( c ) {
+								return c.avatar_url
+									? '<img src="' + escapeHtml( c.avatar_url ) + '" alt="" width="24" height="24" />'
+									: '';
+							} ).filter( Boolean );
+							var names = update.coauthors.map( function ( c ) {
+								return escapeHtml( c.display_name || '' );
+							} ).join( ', ' );
+							authorsHtml = ( avatars.length ? '<span class="liveblog-entry__author-avatars">' + avatars.join( '' ) + '</span> ' : '' ) + '<span class="liveblog-entry__author-names">' + names + '</span>';
+						} else {
+							authorsHtml = escapeHtml( update.author );
+						}
+						header.innerHTML = timeHtml + '<span class="liveblog-entry__authors">' + authorsHtml + '</span>';
 						el.appendChild( header );
 					}
-					const body = document.createElement( 'div' );
+					var body = document.createElement( 'div' );
 					body.className = 'liveblog-entry__content';
 					body.innerHTML = '<p></p>';
 					el.appendChild( body );

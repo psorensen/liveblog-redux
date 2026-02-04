@@ -360,48 +360,7 @@ class Liveblog_REST {
 		}
 		return $entries;
 	}
-
-	// /**
-	//  * Build entry block HTML when render_block returns empty (e.g. static block with inner blocks).
-	//  *
-	//  * @param array  $block    Parsed entry block with innerBlocks.
-	//  * @param array  $attrs   Block attributes.
-	//  * @param string $entry_id Update ID for data-update-id.
-	//  * @return string HTML fragment.
-	//  */
-	// private function build_entry_html( array $block, array $attrs, $entry_id ) {
-	// 	$classes = array( 'liveblog-entry' );
-	// 	if ( ! empty( $attrs['isPinned'] ) ) {
-	// 		$classes[] = 'is-pinned';
-	// 	}
-	// 	if ( ! empty( $attrs['modified'] ) ) {
-	// 		$classes[] = 'has-modified';
-	// 	}
-	// 	$inner = '';
-	// 	foreach ( $block['innerBlocks'] ?? array() as $inner_block ) {
-	// 		$inner .= render_block( $inner_block );
-	// 	}
-	// 	$ts       = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
-	// 	$modified = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
-	// 	$author_id = isset( $attrs['authorId'] ) ? (int) $attrs['authorId'] : 0;
-	// 	$status   = isset( $attrs['status'] ) ? $attrs['status'] : 'published';
-	// 	$data_attrs = array(
-	// 		'data-update-id'   => $entry_id,
-	// 		'data-timestamp'   => $ts ? $ts : '',
-	// 		'data-modified'    => $modified ? $modified : '',
-	// 		'data-author-id'   => $author_id ? $author_id : '',
-	// 		'data-status'      => $status,
-	// 		'data-pinned'      => ! empty( $attrs['isPinned'] ) ? '1' : '',
-	// 	);
-	// 	$data_str = '';
-	// 	foreach ( $data_attrs as $k => $v ) {
-	// 		if ( $v !== '' && $v !== false ) {
-	// 			$data_str .= ' ' . esc_attr( $k ) . '="' . esc_attr( (string) $v ) . '"';
-	// 		}
-	// 	}
-	// 	return '<div class="' . esc_attr( implode( ' ', $classes ) ) . '"' . $data_str . '>' . $inner . '</div>';
-	// }
-
+˝
 	/**
 	 * Find liveblog/container in block tree.
 	 *
@@ -419,6 +378,7 @@ class Liveblog_REST {
 
 	/**
 	 * Format coauthors array for API (avatar_url, etc.).
+	 * For guest authors (Co-Authors Plus), uses guest author email for avatar when available.
 	 *
 	 * @param array $coauthors_data From block attributes.
 	 * @return array
@@ -429,16 +389,29 @@ class Liveblog_REST {
 		}
 		$out = array();
 		foreach ( $coauthors_data as $c ) {
-			$id = isset( $c['id'] ) ? $c['id'] : '';
+			$id   = isset( $c['id'] ) ? $c['id'] : '';
+			$type = isset( $c['type'] ) ? $c['type'] : 'wpuser';
 			$cap_id = is_string( $id ) ? preg_replace( '/^cap-/', '', $id ) : $id;
+			$avatar_url = $this->get_coauthor_avatar_url( $cap_id, $type );
 			$out[] = array(
 				'id'           => $id,
 				'display_name' => isset( $c['display_name'] ) ? $c['display_name'] : '',
-				'avatar_url'   => get_avatar_url( $cap_id, array( 'size' => 96 ) ),
-				'type'         => isset( $c['type'] ) ? $c['type'] : 'wpuser',
+				'avatar_url'   => $avatar_url,
+				'type'         => $type,
 			);
 		}
 		return $out;
+	}
+
+	/**
+	 * Get avatar URL for a coauthor (WP user or Co-Authors Plus guest author).
+	 *
+	 * @param int|string $cap_id Numeric ID (WP user ID or guest author post ID).
+	 * @param string     $type   'wpuser' or 'guest'.
+	 * @return string Avatar URL.
+	 */
+	private function get_coauthor_avatar_url( $cap_id, $type ) {
+		return get_avatar_url( $cap_id, array( 'size' => 96 ) );
 	}
 
 	/**
@@ -452,32 +425,116 @@ class Liveblog_REST {
 
 	/**
 	 * Search Co-Authors Plus authors (WP users + guest authors).
+	 * CAP's search_authors() can miss guest authors when their taxonomy term
+	 * description is empty or slug resolution fails. We merge CAP results with
+	 * a direct guest-author post type search so guest authors always appear.
 	 *
 	 * @param string $search Search term.
 	 * @param int    $limit  Max results.
 	 * @return array
 	 */
 	private function search_cap_authors( $search, $limit = 10 ) {
-		if ( ! class_exists( 'CoAuthors_Plus' ) ) {
+		$seen_ids = array();
+		$results  = array();
+
+		// 1) CAP search (WP users and any guest authors CAP finds via taxonomy).
+		// Use the global Co-Authors Plus instance so guest_authors is initialized (init has run).
+		if ( class_exists( 'CoAuthors_Plus' ) ) {
+			global $coauthors_plus;
+			if ( $coauthors_plus instanceof \CoAuthors_Plus && method_exists( $coauthors_plus, 'search_authors' ) ) {
+				$users = $coauthors_plus->search_authors( $search, array(), $limit );
+				foreach ( (array) $users as $author ) {
+					$id = isset( $author->ID ) ? $author->ID : 0;
+					if ( $id && ! isset( $seen_ids[ $id ] ) ) {
+						$seen_ids[ $id ] = true;
+						$type = isset( $author->type ) && $author->type === 'guest-author' ? 'guest' : 'wpuser';
+						$results[] = array(
+							'id'           => 'cap-' . $id,
+							'display_name' => isset( $author->display_name ) ? $author->display_name : '',
+							'avatar_url'   => $this->get_coauthor_avatar_url( $id, $type ),
+							'type'         => $type,
+						);
+					}
+				}
+			}
+		}
+
+		return array_slice( $results, 0, $limit );
+	}
+
+	/**
+	 * Search guest authors by querying the guest-author post type and display_name meta.
+	 *
+	 * @param string $search      Search term.
+	 * @param int    $limit       Max results.
+	 * @param array  $exclude_ids Coauthor IDs (e.g. from CAP search) to exclude.
+	 * @return array
+	 */
+	private function search_guest_authors_direct( $search, $limit, $exclude_ids = array() ) {
+		if ( ! $this->has_coauthors_plus() || ! class_exists( 'CoAuthors_Guest_Authors' ) ) {
 			return array();
 		}
-		$cap = new \CoAuthors_Plus();
-		if ( ! method_exists( $cap, 'search_authors' ) ) {
-			return $this->fallback_search_authors( $search, $limit );
+		$search = trim( $search );
+		if ( strlen( $search ) < 1 ) {
+			return array();
 		}
-		$users = $cap->search_authors( $search, array(), $limit );
-		$results = array();
-		foreach ( (array) $users as $author ) {
-			$id = isset( $author->ID ) ? $author->ID : 0;
-			$type = isset( $author->type ) && $author->type === 'guest-author' ? 'guest' : 'wpuser';
-			$results[] = array(
-				'id'           => 'cap-' . $id,
-				'display_name' => isset( $author->display_name ) ? $author->display_name : '',
-				'avatar_url'   => get_avatar_url( $id, array( 'size' => 96 ) ),
-				'type'         => $type,
+		$like = '%' . $GLOBALS['wpdb']->esc_like( $search ) . '%';
+		$post_type = 'guest-author';
+		$meta_key_display = $this->get_guest_author_meta_key( 'display_name' );
+		$meta_key_login   = $this->get_guest_author_meta_key( 'user_login' );
+		$exclude_sql = '';
+		if ( ! empty( $exclude_ids ) ) {
+			$exclude_ids = array_map( 'absint', $exclude_ids );
+			$exclude_sql = ' AND p.ID NOT IN (' . implode( ',', $exclude_ids ) . ')';
+		}
+		$limit = max( 1, min( 25, (int) $limit ) );
+		$query = $GLOBALS['wpdb']->prepare(
+			"SELECT DISTINCT p.ID FROM {$GLOBALS['wpdb']->posts} p
+			LEFT JOIN {$GLOBALS['wpdb']->postmeta} pm ON p.ID = pm.post_id AND ( pm.meta_key = %s OR pm.meta_key = %s )
+			WHERE p.post_type = %s AND p.post_status = 'publish'
+			AND ( p.post_title LIKE %s OR ( pm.meta_key IS NOT NULL AND pm.meta_value LIKE %s ) )
+			" . $exclude_sql . "
+			ORDER BY p.post_title ASC
+			LIMIT %d",
+			$meta_key_display,
+			$meta_key_login,
+			$post_type,
+			$like,
+			$like,
+			$limit
+		);
+		$post_ids = $GLOBALS['wpdb']->get_col( $query ); // phpcs:ignore
+		if ( empty( $post_ids ) ) {
+			return array();
+		}
+		$guest_authors = \CoAuthors_Guest_Authors::get_instance();
+		$out = array();
+		foreach ( $post_ids as $post_id ) {
+			$ga = $guest_authors->get_guest_author_by( 'ID', (int) $post_id );
+			if ( ! $ga || empty( $ga->display_name ) ) {
+				continue;
+			}
+			$out[] = array(
+				'id'           => 'cap-' . $ga->ID,
+				'display_name' => $ga->display_name,
+				'avatar_url'   => $this->get_coauthor_avatar_url( $ga->ID, 'guest' ),
+				'type'         => 'guest',
 			);
 		}
-		return $results;
+		return $out;
+	}
+
+	/**
+	 * Meta key used by Co-Authors Plus for guest author fields (prefixed with cap-).
+	 *
+	 * @param string $field Field key (e.g. display_name, user_login).
+	 * @return string
+	 */
+	private function get_guest_author_meta_key( $field ) {
+		if ( 0 === stripos( $field, 'cap-' ) ) {
+			return $field;
+		}
+		return 'cap-' . $field;
 	}
 
 	/**
