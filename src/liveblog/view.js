@@ -11,14 +11,6 @@
 	const MIN_BACKOFF = 5000;
 	const MAX_BACKOFF = 20000;
 
-	const getPostIdFromBody = () => {
-		if ( ! document.body || ! document.body.className ) {
-			return null;
-		}
-		const m = document.body.className.match( /\b(?:page-id-|postid-)(\d+)\b/ );
-		return m ? m[1] : null;
-	};
-
 	const getConfig = () => {
 		const { postId, restUrl } = liveblogData;
 		return { postId: postId || 0, restUrl: restUrl || '', DEFAULT_INTERVAL };
