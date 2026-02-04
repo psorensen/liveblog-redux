@@ -1,4 +1,4 @@
-=== Liveblog Block ===
+=== Liveblog Redux ===
 Contributors:      psorensen
 Tags:              block, liveblog, gutenberg, real-time
 Tested up to:      6.7

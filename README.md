@@ -1,4 +1,4 @@
-# Liveblog Block
+# Liveblog Redux
 
 Gutenberg blocks for liveblogging on WordPress. Newest entries first, with optional real-time updates on the front end.
 
