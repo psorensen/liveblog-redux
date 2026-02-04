@@ -89,7 +89,7 @@ function print_data_to_footer() {
 	}
 
 	/**
-	 * Filter the interval for liveblog polling.
+	 * Filter the interval for liveblog polling. (Defaults to 10 seconds.)
 	 *
 	 * @param int $interval The interval in milliseconds.
 	 */
