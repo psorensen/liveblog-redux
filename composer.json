@@ -12,13 +12,14 @@
 	],
 	"require": {
 		"php": ">=7.4",
-		"composer/installers": "^1.0 || ^2.0"
+		"composer/installers": "^1.0 || ^2.0",
+		"10up/phpcs-composer": "^3.0"
 	},
 	"config": {
 		"allow-plugins": {
-			"composer/installers": true
+			"composer/installers": true,
+			"dealerdirect/phpcodesniffer-composer-installer": true
 		},
 		"sort-packages": true
 	}
 }
-
