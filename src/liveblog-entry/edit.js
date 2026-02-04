@@ -18,8 +18,6 @@ import { useEffect, useRef } from '@wordpress/element';
 import CoAuthorsSelector from './components/coauthors-selector';
 import './editor.scss';
 
-const TEMPLATE = [ [ 'core/paragraph', { placeholder: __( 'Write update…', 'liveblog' ) } ] ];
-
 function generateUpdateId() {
 	if ( typeof crypto !== 'undefined' && crypto.randomUUID ) {
 		return crypto.randomUUID();
@@ -146,7 +144,6 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 				</div>
 				<div className="liveblog-entry__content">
 					<InnerBlocks
-						template={ TEMPLATE }
 						templateLock={ false }
 					/>
 				</div>

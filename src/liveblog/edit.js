@@ -42,22 +42,14 @@ export default function Edit({ clientId, attributes }) {
 
 	const { insertBlocks } = useDispatch('core/block-editor');
 
-	useEffect(() => {
-		if (innerBlockCount === 0 && typeof insertBlocks === 'function') {
-			const entryBlock = createBlock(
-				'liveblog/entry',
-				{},
-				[createBlock('core/paragraph', { placeholder: __('Write update…', 'liveblog') })]
-			);
-			insertBlocks([entryBlock], 0, clientId);
-		}
-	}, [clientId, innerBlockCount, insertBlocks]);
-
 	const addEntryAtTop = () => {
 		const entryBlock = createBlock(
 			'liveblog/entry',
 			{},
-			[createBlock('core/paragraph', { placeholder: __('Write update…', 'liveblog') })]
+			[
+				createBlock('core/heading', { level: 2, placeholder: __('Entry Title', 'liveblog') }),
+				createBlock('core/paragraph', { placeholder: __('Write update…', 'liveblog') }),
+			]
 		);
 		insertBlocks([entryBlock], 0, clientId);
 	};
@@ -66,7 +58,8 @@ export default function Edit({ clientId, attributes }) {
 		<div {...blockProps}>
 
 			<HStack
-			alignment="right">
+				alignment="right"
+			>
 				<Button
 					className="liveblog-container__appender"
 					onClick={addEntryAtTop}
