@@ -7,15 +7,6 @@
 	padding-left: 20px;
 	margin-bottom: 30px;
 	position: relative;
-
-	&.has-modified {
-		border-left-color: #f0b849;
-	}
-
-	&.is-pinned {
-		background: #f9f9f9;
-		border-left-color: #d63638;
-	}
 }
 
 .liveblog-entry__header {
