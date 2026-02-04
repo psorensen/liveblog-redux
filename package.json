@@ -1,8 +1,8 @@
 {
-	"name": "liveblog-block",
+	"name": "liveblog-redux",
 	"version": "0.1.0",
-	"description": "Example block scaffolded with Create Block tool.",
-	"author": "The WordPress Contributors",
+	"description": "A modernized version of the Liveblog plugin.",
+	"author": "Peter Sorensen, Robots",
 	"license": "GPL-2.0-or-later",
 	"main": "build/index.js",
 	"scripts": {
@@ -14,14 +14,7 @@
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start": "wp-scripts start --webpack-copy-php --blocks-manifest"
 	},
-	"dependencies": {
-		"@tiptap/react": "^2.1.13",
-		"@tiptap/starter-kit": "^2.1.13",
-		"@tiptap/extension-bold": "^2.1.13",
-		"@tiptap/extension-italic": "^2.1.13",
-		"@tiptap/extension-blockquote": "^2.1.13",
-		"@tiptap/extension-image": "^2.1.13"
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"@wordpress/api-fetch": "*",
 		"@wordpress/scripts": "^31.1.0"
