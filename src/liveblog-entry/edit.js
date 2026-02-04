@@ -18,14 +18,14 @@ import { useEffect, useRef } from '@wordpress/element';
 import CoAuthorsSelector from './components/coauthors-selector';
 import './editor.scss';
 
-function generateUpdateId() {
+const generateUpdateId = () => {
 	if ( typeof crypto !== 'undefined' && crypto.randomUUID ) {
 		return crypto.randomUUID();
 	}
-	return 'lb-' + Date.now().toString( 36 ) + '-' + Math.random().toString( 36 ).slice( 2, 10 );
-}
+	return `lb-${ Date.now().toString( 36 ) }-${ Math.random().toString( 36 ).slice( 2, 10 ) }`;
+};
 
-function formatTime( ts ) {
+const formatTime = ( ts ) => {
 	if ( ! ts ) return '';
 	const d = new Date( ts * 1000 );
 	return d.toLocaleTimeString( undefined, {
@@ -33,7 +33,7 @@ function formatTime( ts ) {
 		minute: '2-digit',
 		hour12: true,
 	} );
-}
+};
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
 	const {

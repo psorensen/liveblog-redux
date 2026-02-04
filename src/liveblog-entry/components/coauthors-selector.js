@@ -49,7 +49,7 @@ export default function CoAuthorsSelector( { value = [], onChange } ) {
 
 	const handleAddCurrentUser = useCallback( () => {
 		if ( ! currentUser ) return;
-		const id = 'cap-' + currentUser.id;
+		const id = `cap-${ currentUser.id }`;
 		if ( value.some( ( a ) => String( a.id ) === id || String( a.id ) === String( currentUser.id ) ) ) {
 			return;
 		}
