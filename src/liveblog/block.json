@@ -17,18 +17,6 @@
 	"style": "file:./style-index.css",
 	"viewScript": "file:./view.js",
 	"attributes": {
-		"updateInterval": {
-			"type": "number",
-			"default": 15000
-		},
-		"showTimestamps": {
-			"type": "boolean",
-			"default": true
-		},
-		"newestFirst": {
-			"type": "boolean",
-			"default": true
-		},
 		"allowedBlocks": {
 			"type": "array",
 			"default": ["liveblog/entry"]
