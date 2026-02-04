@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/includes/class-liveblog-rest.php';
+require_once __DIR__ . '/includes/class-liveblog-schema.php';
 
 /**
  * Registers the block using a `blocks-manifest.php` file, which improves the performance of block type registration.
@@ -68,3 +69,11 @@ function liveblog_rest_init() {
 	new Liveblog_REST();
 }
 add_action( 'init', 'liveblog_rest_init' );
+
+/**
+ * Bootstrap Schema.org LiveBlogPosting output.
+ */
+function liveblog_schema_init() {
+	new Liveblog_Schema();
+}
+add_action( 'init', 'liveblog_schema_init' );
