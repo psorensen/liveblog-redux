@@ -1,0 +1,72 @@
+# Liveblog Block
+
+Gutenberg blocks for liveblogging on WordPress. Newest entries first, with optional real-time updates on the front end.
+
+## What it does
+
+Adds two blocks to the block editor:
+
+- **Liveblog** — A container that holds all entries. Add updates with “Add new entry” at the top; entries are ordered newest first.
+- **Liveblog Entry** — A single update with timestamp, author(s), rich content (paragraphs, images, blockquotes, etc.) via TipTap, optional pinning, and optional [Co-Authors Plus](https://wordpress.org/plugins/co-authors-plus/) support for multiple authors.
+
+On the front end, the liveblog can poll the REST API so readers see new and updated entries without refreshing the page.
+
+## Requirements
+
+- **WordPress** 6.7+
+- **PHP** 7.4+
+- **Parent Liveblog plugin** — Must be installed and activated; this plugin provides the block-based experience on top of it.
+- **Co-Authors Plus** (optional) — For multiple authors per entry (WP users and guest authors).
+
+## Installation
+
+1. Install and activate the parent [Liveblog](https://wordpress.org/plugins/liveblog/) plugin.
+2. Install and activate this plugin (e.g. upload and activate, or clone into `wp-content/plugins/liveblog-block`).
+3. Build assets from the plugin directory:
+
+   ```bash
+   npm install
+   npm run build
+   ```
+
+4. In the editor, add the **Liveblog** block to a post, then use **Add new entry** to add updates. New entries appear at the top.
+
+## REST API
+
+Base namespace: `liveblog/v1`.
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /wp-json/liveblog/v1/posts/{post_id}/updates` | List updates. Query: `since` (Unix timestamp), `include_modified` (default `true`), `per_page` (1–100, default 50). Returns `updates`, `last_modified`, `has_more`. |
+| `GET /wp-json/liveblog/v1/posts/{post_id}/updates/count` | Count of new/modified updates since `since`. Requires `read_post` for the post. |
+| `GET /wp-json/liveblog/v1/authors/search?search=...` | Search authors (Co-Authors Plus). Requires `edit_posts`. Returns `id`, `display_name`, `avatar_url`, `type` (`wpuser` or `guest`). |
+
+Responses for the updates list are cached in a transient (5-minute TTL, keyed by post ID and last-modified). Cache is cleared when the post is saved.
+
+## Development
+
+From the plugin root:
+
+| Command | Description |
+|---------|-------------|
+| `npm run build` | Production build; outputs to `build/` and generates `blocks-manifest.php` (WordPress 6.7+). |
+| `npm run start` | Development build with watch. |
+| `npm run lint:js` | Lint JavaScript. |
+| `npm run lint:css` | Lint styles. |
+| `npm run plugin-zip` | Create a distributable plugin zip. |
+
+Block registration uses the [blocks manifest](https://make.wordpress.org/core/2024/10/17/new-block-type-registration-apis-to-improve-performance-in-wordpress-6-7/) when available (WordPress 6.7+).
+
+### Project structure
+
+| Path | Purpose |
+|------|---------|
+| `liveblog-block.php` | Plugin bootstrap; block registration, REST init. |
+| `includes/class-liveblog-rest.php` | REST routes, cache invalidation, author search, footer data for front-end polling. |
+| `src/liveblog/` | Container block (edit, save, view). |
+| `src/liveblog-entry/` | Entry block (TipTap editor, save, view, coauthors selector). |
+| `build/` | Compiled block assets (after `npm run build`). |
+
+## License
+
+GPL-2.0-or-later. See [license URI](https://www.gnu.org/licenses/gpl-2.0.html).
