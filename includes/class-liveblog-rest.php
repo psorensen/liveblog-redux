@@ -360,7 +360,7 @@ class Liveblog_REST {
 		}
 		return $entries;
 	}
-˝
+
 	/**
 	 * Find liveblog/container in block tree.
 	 *
