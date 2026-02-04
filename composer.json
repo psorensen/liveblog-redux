@@ -1,12 +1,13 @@
 {
-	"name": "psorensen/liveblog-block",
-	"description": "Liveblog block for WordPress.",
+	"name": "psorensen/liveblog-redux",
+	"description": "A modernized version of the Liveblog plugin.",
 	"version": "0.1.0",
 	"license": "GPL-2.0-or-later",
 	"type": "wordpress-plugin",
 	"authors": [
 		{
-			"name": "Peter Sorensen"
+			"name": "Peter Sorensen",
+			"email": "peter@fueled.com"
 		}
 	],
 	"require": {
