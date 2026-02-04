@@ -14,9 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Liveblog_REST {
 
-	const NAMESPACE = 'liveblog/v1';
-	const CACHE_TTL  = 300; // 5 minutes.
-	const CACHE_KEY_PREFIX = 'liveblog_updates_';
+	const NAMESPACE          = 'liveblog/v1';
+	const CACHE_TTL          = 300; // 5 minutes.
+	const CACHE_KEY_PREFIX   = 'liveblog_updates_';
 	const META_LAST_MODIFIED = '_liveblog_last_modified';
 
 	/**
@@ -25,7 +25,6 @@ class Liveblog_REST {
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'save_post', array( $this, 'invalidate_cache_on_save' ), 10, 2 );
-		add_action( 'wp_footer', array( $this, 'print_data_to_footer' ) );
 	}
 
 	/**
@@ -123,12 +122,10 @@ class Liveblog_REST {
 	/**
 	 * Validate post_id: post exists and has liveblog block.
 	 *
-	 * @param int             $value   Post ID.
-	 * @param \WP_REST_Request $request Request.
-	 * @param string          $param   Param name.
+	 * @param int $value   Post ID.
 	 * @return true|\WP_Error
 	 */
-	public function validate_post_id( $value, $request, $param ) {
+	public function validate_post_id( $value ) {
 		$post = get_post( $value );
 		if ( ! $post ) {
 			return new \WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.', 'liveblog' ), array( 'status' => 404 ) );
@@ -178,15 +175,15 @@ class Liveblog_REST {
 			if ( $count >= $per_page ) {
 				break;
 			}
-			$attrs    = $entry['attrs'];
-			$ts       = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
-			$modified = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
+			$attrs     = $entry['attrs'];
+			$ts        = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
+			$modified  = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
 			$update_id = isset( $attrs['updateId'] ) ? $attrs['updateId'] : '';
 
 			if ( $since > 0 ) {
 				// New = created after client's snapshot (timestamp > since). Do not require modified <= since,
 				// because new entries often have modified set by the editor when the user types before save.
-				$is_new      = $ts > $since || ( $ts === 0 && $modified === 0 );
+				$is_new = $ts > $since || ( $ts === 0 && $modified === 0 );
 				// Modified = existed at since (timestamp <= since) but edited after (modified > since).
 				$is_modified = $include_modified && $ts <= $since && $modified > $since;
 				if ( ! $is_new && ! $is_modified ) {
@@ -202,13 +199,13 @@ class Liveblog_REST {
 				continue;
 			}
 
-			$author_id = isset( $attrs['authorId'] ) ? (int) $attrs['authorId'] : 0;
+			$author_id   = isset( $attrs['authorId'] ) ? (int) $attrs['authorId'] : 0;
 			$author_name = '';
 			if ( $author_id ) {
-				$user = get_userdata( $author_id );
+				$user        = get_userdata( $author_id );
 				$author_name = $user ? $user->display_name : '';
 			}
-			$coauthors_data = isset( $attrs['coauthors'] ) && is_array( $attrs['coauthors'] ) ? $attrs['coauthors'] : array();
+			$coauthors_data      = isset( $attrs['coauthors'] ) && is_array( $attrs['coauthors'] ) ? $attrs['coauthors'] : array();
 			$coauthors_formatted = $this->format_coauthors_for_api( $coauthors_data );
 			if ( ! empty( $coauthors_formatted ) && empty( $author_name ) ) {
 				$author_name = $coauthors_formatted[0]['display_name'];
@@ -242,11 +239,13 @@ class Liveblog_REST {
 			}
 		}
 
-		return rest_ensure_response( array(
-			'updates'       => $updates,
-			'last_modified' => $last_modified_response,
-			'has_more'      => count( $all_entries ) > $count,
-		) );
+		return rest_ensure_response(
+			array(
+				'updates'       => $updates,
+				'last_modified' => $last_modified_response,
+				'has_more'      => count( $all_entries ) > $count,
+			)
+		);
 	}
 
 	/**
@@ -280,21 +279,23 @@ class Liveblog_REST {
 			$ts       = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
 			$modified = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
 			if ( $since === 0 ) {
-				$new_count++;
+				++$new_count;
 				continue;
 			}
 			if ( $ts > $since || ( $ts === 0 && $modified === 0 ) ) {
-				$new_count++;
+				++$new_count;
 			} elseif ( $ts <= $since && $modified > $since ) {
-				$modified_count++;
+				++$modified_count;
 			}
 		}
 
-		return rest_ensure_response( array(
-			'count'          => $new_count + $modified_count,
-			'new_count'      => $new_count,
-			'modified_count' => $modified_count,
-		) );
+		return rest_ensure_response(
+			array(
+				'count'          => $new_count + $modified_count,
+				'new_count'      => $new_count,
+				'modified_count' => $modified_count,
+			)
+		);
 	}
 
 	/**
@@ -320,7 +321,7 @@ class Liveblog_REST {
 	/**
 	 * Invalidate cache when post is saved.
 	 *
-	 * @param int     $post_id Post ID.
+	 * @param int      $post_id Post ID.
 	 * @param \WP_Post $post    Post object.
 	 */
 	public function invalidate_cache_on_save( $post_id, $post ) {
@@ -344,7 +345,7 @@ class Liveblog_REST {
 		if ( ! $post ) {
 			return new \WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.', 'liveblog' ), array( 'status' => 404 ) );
 		}
-		$blocks = parse_blocks( $post->post_content );
+		$blocks    = parse_blocks( $post->post_content );
 		$container = $this->find_liveblog_container( $blocks );
 		if ( ! $container ) {
 			return array();
@@ -390,11 +391,11 @@ class Liveblog_REST {
 		}
 		$out = array();
 		foreach ( $coauthors_data as $c ) {
-			$id   = isset( $c['id'] ) ? $c['id'] : '';
-			$type = isset( $c['type'] ) ? $c['type'] : 'wpuser';
-			$cap_id = is_string( $id ) ? preg_replace( '/^cap-/', '', $id ) : $id;
+			$id         = isset( $c['id'] ) ? $c['id'] : '';
+			$type       = isset( $c['type'] ) ? $c['type'] : 'wpuser';
+			$cap_id     = is_string( $id ) ? preg_replace( '/^cap-/', '', $id ) : $id;
 			$avatar_url = $this->get_coauthor_avatar_url( $cap_id, $type );
-			$out[] = array(
+			$out[]      = array(
 				'id'           => $id,
 				'display_name' => isset( $c['display_name'] ) ? $c['display_name'] : '',
 				'avatar_url'   => $avatar_url,
@@ -448,8 +449,8 @@ class Liveblog_REST {
 					$id = isset( $author->ID ) ? $author->ID : 0;
 					if ( $id && ! isset( $seen_ids[ $id ] ) ) {
 						$seen_ids[ $id ] = true;
-						$type = isset( $author->type ) && $author->type === 'guest-author' ? 'guest' : 'wpuser';
-						$results[] = array(
+						$type            = isset( $author->type ) && $author->type === 'guest-author' ? 'guest' : 'wpuser';
+						$results[]       = array(
 							'id'           => 'cap-' . $id,
 							'display_name' => isset( $author->display_name ) ? $author->display_name : '',
 							'avatar_url'   => $this->get_coauthor_avatar_url( $id, $type ),
@@ -479,24 +480,24 @@ class Liveblog_REST {
 		if ( strlen( $search ) < 1 ) {
 			return array();
 		}
-		$like = '%' . $GLOBALS['wpdb']->esc_like( $search ) . '%';
-		$post_type = 'guest-author';
+		$like             = '%' . $GLOBALS['wpdb']->esc_like( $search ) . '%';
+		$post_type        = 'guest-author';
 		$meta_key_display = $this->get_guest_author_meta_key( 'display_name' );
 		$meta_key_login   = $this->get_guest_author_meta_key( 'user_login' );
-		$exclude_sql = '';
+		$exclude_sql      = '';
 		if ( ! empty( $exclude_ids ) ) {
 			$exclude_ids = array_map( 'absint', $exclude_ids );
 			$exclude_sql = ' AND p.ID NOT IN (' . implode( ',', $exclude_ids ) . ')';
 		}
-		$limit = max( 1, min( 25, (int) $limit ) );
-		$query = $GLOBALS['wpdb']->prepare(
+		$limit    = max( 1, min( 25, (int) $limit ) );
+		$query    = $GLOBALS['wpdb']->prepare(
 			"SELECT DISTINCT p.ID FROM {$GLOBALS['wpdb']->posts} p
 			LEFT JOIN {$GLOBALS['wpdb']->postmeta} pm ON p.ID = pm.post_id AND ( pm.meta_key = %s OR pm.meta_key = %s )
 			WHERE p.post_type = %s AND p.post_status = 'publish'
 			AND ( p.post_title LIKE %s OR ( pm.meta_key IS NOT NULL AND pm.meta_value LIKE %s ) )
-			" . $exclude_sql . "
+			" . $exclude_sql . '
 			ORDER BY p.post_title ASC
-			LIMIT %d",
+			LIMIT %d',
 			$meta_key_display,
 			$meta_key_login,
 			$post_type,
@@ -509,7 +510,7 @@ class Liveblog_REST {
 			return array();
 		}
 		$guest_authors = \CoAuthors_Guest_Authors::get_instance();
-		$out = array();
+		$out           = array();
 		foreach ( $post_ids as $post_id ) {
 			$ga = $guest_authors->get_guest_author_by( 'ID', (int) $post_id );
 			if ( ! $ga || empty( $ga->display_name ) ) {
@@ -537,24 +538,4 @@ class Liveblog_REST {
 		}
 		return 'cap-' . $field;
 	}
-
-	/**
-	 * Print data to footer.
-	 */
-	public function print_data_to_footer() {
-		
-		$post_id = get_the_ID();
-		if ( ! $post_id ) {
-			return;
-		}
-		?>
-		<script>
-			var liveblogData = <?php echo json_encode( array(
-				'restUrl' => rest_url("liveblog/v1/posts/{$post_id}/updates"),
-				'postId' => $post_id,
-			) ); ?>;
-		</script>
-		<?php
-	}
-
 }
