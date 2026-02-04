@@ -77,3 +77,40 @@ function liveblog_schema_init() {
 	new Liveblog_Schema();
 }
 add_action( 'init', 'liveblog_schema_init' );
+
+/**
+ * Print data to footer.
+ */
+function print_data_to_footer() {
+
+	$post_id = get_the_ID();
+	if ( ! $post_id ) {
+		return;
+	}
+
+	/**
+	 * Filter the interval for liveblog polling.
+	 *
+	 * @param int $interval The interval in milliseconds.
+	 */
+	$polling_interval = apply_filters( 'liveblog_update_interval', 10000 );
+
+	?>
+	<script>
+		var liveblogData = 
+		<?php
+			echo wp_json_encode(
+				array(
+					'restUrl'  => rest_url( "liveblog/v1/posts/{$post_id}/updates" ),
+					'postId'   => $post_id,
+					'interval' => $polling_interval,
+				)
+			);
+		?>
+		;
+	</script>
+	<?php
+}
+
+add_action( 'wp_footer', 'print_data_to_footer' );
+

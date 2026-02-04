@@ -12,8 +12,12 @@
 	const MAX_BACKOFF = 20000;
 
 	const getConfig = () => {
-		const { postId, restUrl } = liveblogData;
-		return { postId: postId || 0, restUrl: restUrl || '', DEFAULT_INTERVAL };
+		const { postId, restUrl, interval } = liveblogData || {};
+		return {
+			postId: postId || 0,
+			restUrl: restUrl || '',
+			interval: typeof interval === 'number' && interval > 0 ? interval : DEFAULT_INTERVAL,
+		};
 	};
 
 	const formatTimestamp = ( ts ) => {
@@ -149,6 +153,7 @@
 	};
 
 	const scheduleNext = ( container, config ) => {
+		console.log( 'scheduleNext', container, config );
 		const state = container._liveblogState;
 		if ( state && state.timerId ) {
 			clearTimeout( state.timerId );
