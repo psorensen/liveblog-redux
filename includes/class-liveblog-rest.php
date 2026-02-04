@@ -25,6 +25,7 @@ class Liveblog_REST {
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'save_post', array( $this, 'invalidate_cache_on_save' ), 10, 2 );
+		add_action( 'wp_footer', array( $this, 'print_data_to_footer' ) );
 	}
 
 	/**
@@ -535,6 +536,25 @@ class Liveblog_REST {
 			return $field;
 		}
 		return 'cap-' . $field;
+	}
+
+	/**
+	 * Print data to footer.
+	 */
+	public function print_data_to_footer() {
+		
+		$post_id = get_the_ID();
+		if ( ! $post_id ) {
+			return;
+		}
+		?>
+		<script>
+			var liveblogData = <?php echo json_encode( array(
+				'restUrl' => rest_url("liveblog/v1/posts/{$post_id}/updates"),
+				'postId' => $post_id,
+			) ); ?>;
+		</script>
+		<?php
 	}
 
 }

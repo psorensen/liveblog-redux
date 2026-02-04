@@ -6,7 +6,7 @@
  */
 
 ( () => {
-	const DEFAULT_INTERVAL = 5000;
+	const DEFAULT_INTERVAL = 10000;
 	const INACTIVE_INTERVAL = 10000;
 	const MIN_BACKOFF = 5000;
 	const MAX_BACKOFF = 20000;
@@ -19,24 +19,9 @@
 		return m ? m[1] : null;
 	};
 
-	const getRestUrlFromPage = () => {
-		if ( typeof window.wpApiSettings !== 'undefined' && window.wpApiSettings.root ) {
-			return window.wpApiSettings.root.replace( /\/$/, '' );
-		}
-		const origin = window.location.origin || '';
-		return `${ origin }/wp-json`;
-	};
-
-	const getConfig = ( container ) => {
-		let postId = container.getAttribute( 'data-post-id' );
-		let restUrl = ( container.getAttribute( 'data-rest-url' ) || '' ).replace( /\/$/, '' );
-		if ( ! postId || postId === '0' ) {
-			postId = getPostIdFromBody();
-		}
-		if ( ! restUrl ) {
-			restUrl = getRestUrlFromPage();
-		}
-		return { postId, restUrl, DEFAULT_INTERVAL };
+	const getConfig = () => {
+		const { postId, restUrl } = liveblogData;
+		return { postId: postId || 0, restUrl: restUrl || '', DEFAULT_INTERVAL };
 	};
 
 	const formatTimestamp = ( ts ) => {
@@ -131,8 +116,9 @@
 			timerId: null,
 		};
 		container._liveblogState = state;
-
-		const url = `${ config.restUrl }/liveblog/v1/posts/${ encodeURIComponent( config.postId ) }/updates?since=${ state.lastModified }&per_page=50&_=${ Date.now() }`;
+		
+		const url = `${ config.restUrl }?since=${ state.lastModified }&per_page=50&_=${ Date.now() }`;
+		console.log( 'url', url );
 
 		const wasInitialSync = state.lastModified === 0;
 		fetch( url )
@@ -185,6 +171,7 @@
 	};
 
 	const start = ( container ) => {
+		console.log( 'start', container );
 		const config = getConfig( container );
 		if ( ! config.postId || ! config.restUrl ) {
 			return;
@@ -212,9 +199,13 @@
 
 	const init = () => {
 		const containers = document.querySelectorAll( '.liveblog-container' );
+		console.log( 'init', containers );
 		containers.forEach( ( container ) => {
+			console.log( 'container', container );
 			const config = getConfig( container );
+			console.log( 'config', config );
 			if ( config.postId && config.restUrl ) {
+				console.log( 'start', container );
 				start( container );
 			}
 		} );
