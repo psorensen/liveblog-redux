@@ -537,29 +537,4 @@ class Liveblog_REST {
 		return 'cap-' . $field;
 	}
 
-	/**
-	 * Fallback author search when CAP search_authors is not available (e.g. WP user search).
-	 *
-	 * @param string $search Search term.
-	 * @param int    $limit  Max results.
-	 * @return array
-	 */
-	private function fallback_search_authors( $search, $limit ) {
-		$users = get_users( array(
-			'search'         => '*' . $search . '*',
-			'search_columns' => array( 'user_login', 'user_nicename', 'display_name' ),
-			'number'         => $limit,
-			'orderby'        => 'display_name',
-		) );
-		$results = array();
-		foreach ( $users as $user ) {
-			$results[] = array(
-				'id'           => 'cap-' . $user->ID,
-				'display_name' => $user->display_name,
-				'avatar_url'   => get_avatar_url( $user->ID, array( 'size' => 96 ) ),
-				'type'         => 'wpuser',
-			);
-		}
-		return $results;
-	}
 }
