@@ -152,16 +152,23 @@ class Liveblog_REST {
 
 		$last_modified = (int) get_post_meta( $post_id, self::META_LAST_MODIFIED, true );
 		$cache_key     = self::CACHE_KEY_PREFIX . $post_id . '_' . $last_modified;
-		$cached        = get_transient( $cache_key );
-
+		$cached        = false;
+		if ( $since === 0 ) {
+			$cached = get_transient( $cache_key );
+		}
 		if ( false !== $cached ) {
 			$all_entries = $cached;
 		} else {
+			if ( $since > 0 ) {
+				wp_cache_delete( $post_id, 'posts' );
+			}
 			$all_entries = $this->get_entries_from_post( $post_id );
 			if ( is_wp_error( $all_entries ) ) {
 				return $all_entries;
 			}
-			set_transient( $cache_key, $all_entries, self::CACHE_TTL );
+			if ( $since === 0 ) {
+				set_transient( $cache_key, $all_entries, self::CACHE_TTL );
+			}
 		}
 
 		$updates = array();
@@ -176,15 +183,18 @@ class Liveblog_REST {
 			$update_id = isset( $attrs['updateId'] ) ? $attrs['updateId'] : '';
 
 			if ( $since > 0 ) {
-				$is_new      = $ts > $since && ( $modified <= $since || $modified === 0 );
-				$is_modified = $include_modified && $modified > $since;
+				// New = created after client's snapshot (timestamp > since). Do not require modified <= since,
+				// because new entries often have modified set by the editor when the user types before save.
+				$is_new      = $ts > $since || ( $ts === 0 && $modified === 0 );
+				// Modified = existed at since (timestamp <= since) but edited after (modified > since).
+				$is_modified = $include_modified && $ts <= $since && $modified > $since;
 				if ( ! $is_new && ! $is_modified ) {
 					continue;
 				}
 			}
 
 			$change_type = 'new';
-			if ( $since > 0 && $modified > $since ) {
+			if ( $since > 0 && $ts <= $since && $modified > $since ) {
 				$change_type = 'modified';
 			}
 			if ( ! $include_modified && $change_type === 'modified' ) {
@@ -272,9 +282,9 @@ class Liveblog_REST {
 				$new_count++;
 				continue;
 			}
-			if ( $ts > $since && ( $modified <= $since || $modified === 0 ) ) {
+			if ( $ts > $since || ( $ts === 0 && $modified === 0 ) ) {
 				$new_count++;
-			} elseif ( $modified > $since ) {
+			} elseif ( $ts <= $since && $modified > $since ) {
 				$modified_count++;
 			}
 		}
@@ -316,6 +326,7 @@ class Liveblog_REST {
 		if ( ! $post || ! has_block( 'liveblog/container', $post ) ) {
 			return;
 		}
+		clean_post_cache( $post_id );
 		$last = (int) get_post_meta( $post_id, self::META_LAST_MODIFIED, true );
 		delete_transient( self::CACHE_KEY_PREFIX . $post_id . '_' . $last );
 		update_post_meta( $post_id, self::META_LAST_MODIFIED, time() );
@@ -349,6 +360,47 @@ class Liveblog_REST {
 		}
 		return $entries;
 	}
+
+	// /**
+	//  * Build entry block HTML when render_block returns empty (e.g. static block with inner blocks).
+	//  *
+	//  * @param array  $block    Parsed entry block with innerBlocks.
+	//  * @param array  $attrs   Block attributes.
+	//  * @param string $entry_id Update ID for data-update-id.
+	//  * @return string HTML fragment.
+	//  */
+	// private function build_entry_html( array $block, array $attrs, $entry_id ) {
+	// 	$classes = array( 'liveblog-entry' );
+	// 	if ( ! empty( $attrs['isPinned'] ) ) {
+	// 		$classes[] = 'is-pinned';
+	// 	}
+	// 	if ( ! empty( $attrs['modified'] ) ) {
+	// 		$classes[] = 'has-modified';
+	// 	}
+	// 	$inner = '';
+	// 	foreach ( $block['innerBlocks'] ?? array() as $inner_block ) {
+	// 		$inner .= render_block( $inner_block );
+	// 	}
+	// 	$ts       = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
+	// 	$modified = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
+	// 	$author_id = isset( $attrs['authorId'] ) ? (int) $attrs['authorId'] : 0;
+	// 	$status   = isset( $attrs['status'] ) ? $attrs['status'] : 'published';
+	// 	$data_attrs = array(
+	// 		'data-update-id'   => $entry_id,
+	// 		'data-timestamp'   => $ts ? $ts : '',
+	// 		'data-modified'    => $modified ? $modified : '',
+	// 		'data-author-id'   => $author_id ? $author_id : '',
+	// 		'data-status'      => $status,
+	// 		'data-pinned'      => ! empty( $attrs['isPinned'] ) ? '1' : '',
+	// 	);
+	// 	$data_str = '';
+	// 	foreach ( $data_attrs as $k => $v ) {
+	// 		if ( $v !== '' && $v !== false ) {
+	// 			$data_str .= ' ' . esc_attr( $k ) . '="' . esc_attr( (string) $v ) . '"';
+	// 		}
+	// 	}
+	// 	return '<div class="' . esc_attr( implode( ' ', $classes ) ) . '"' . $data_str . '>' . $inner . '</div>';
+	// }
 
 	/**
 	 * Find liveblog/container in block tree.
