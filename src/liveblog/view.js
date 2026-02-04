@@ -44,6 +44,9 @@
 
 	const isAtTop = () => typeof window !== 'undefined' && window.scrollY < SCROLL_TOP_THRESHOLD;
 
+	const isTabVisible = () =>
+		typeof document !== 'undefined' && typeof document.visibilityState !== 'undefined' && document.visibilityState === 'visible';
+
 	const buildNewEntryElement = ( update ) => {
 		const content = typeof update.content === 'string' ? update.content : '';
 		const id = update.id;
@@ -116,6 +119,22 @@
 		return count;
 	};
 
+	let unreadNewCount = 0;
+	let originalTitle = '';
+
+	const getOriginalTitle = () => {
+		if ( originalTitle ) return originalTitle;
+		const t = typeof document !== 'undefined' ? document.title : '';
+		originalTitle = t.replace( /^\(\d+\s*(?:new\s*)?\)\s*/i, '' ).trim() || t;
+		return originalTitle;
+	};
+
+	const updateTabTitle = ( newCount ) => {
+		if ( typeof document === 'undefined' ) return;
+		const base = getOriginalTitle();
+		document.title = newCount > 0 ? `(${ newCount }) ${ base }` : base;
+	};
+
 	let notificationBanner = null;
 	let bannerDismissTimer = null;
 
@@ -159,6 +178,8 @@
 				} );
 				state.queuedNew = [];
 			} );
+			unreadNewCount = 0;
+			updateTabTitle( 0 );
 			hide();
 		} );
 
@@ -170,13 +191,14 @@
 	};
 
 	const updateBanner = () => {
-		const newCount = getGlobalQueuedNewCount();
-		if ( newCount === 0 ) {
+		const queuedCount = getGlobalQueuedNewCount();
+		updateTabTitle( unreadNewCount );
+		if ( queuedCount === 0 ) {
 			if ( notificationBanner ) notificationBanner.hide();
 			return;
 		}
 		createNotificationBanner();
-		notificationBanner.show( newCount );
+		notificationBanner.show( queuedCount );
 	};
 
 	const processUpdates = ( container, updates ) => {
@@ -194,8 +216,15 @@
 				if ( isAtTop() ) {
 					const el = buildNewEntryElement( update );
 					if ( el ) insertNewEntry( container, el );
+					if ( isTabVisible() ) {
+						unreadNewCount = 0;
+					} else {
+						unreadNewCount += 1;
+					}
+					updateTabTitle( unreadNewCount );
 				} else {
 					state.queuedNew.push( update );
+					unreadNewCount += 1;
 					updateBanner();
 				}
 			}
@@ -266,6 +295,10 @@
 	};
 
 	const onVisibilityChange = () => {
+		if ( isTabVisible() ) {
+			unreadNewCount = 0;
+			updateTabTitle( 0 );
+		}
 		document.querySelectorAll( '.liveblog-container' ).forEach( ( container ) => {
 			if ( ! container._liveblogState ) {
 				return;
@@ -282,6 +315,7 @@
 	};
 
 	const init = () => {
+		getOriginalTitle();
 		const containers = document.querySelectorAll( '.liveblog-container' );
 		containers.forEach( ( container ) => {
 			const config = getConfig( container );
