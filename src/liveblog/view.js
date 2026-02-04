@@ -118,7 +118,6 @@
 		container._liveblogState = state;
 		
 		const url = `${ config.restUrl }?since=${ state.lastModified }&per_page=50&_=${ Date.now() }`;
-		console.log( 'url', url );
 
 		const wasInitialSync = state.lastModified === 0;
 		fetch( url )
@@ -171,7 +170,6 @@
 	};
 
 	const start = ( container ) => {
-		console.log( 'start', container );
 		const config = getConfig( container );
 		if ( ! config.postId || ! config.restUrl ) {
 			return;
@@ -199,13 +197,9 @@
 
 	const init = () => {
 		const containers = document.querySelectorAll( '.liveblog-container' );
-		console.log( 'init', containers );
 		containers.forEach( ( container ) => {
-			console.log( 'container', container );
 			const config = getConfig( container );
-			console.log( 'config', config );
 			if ( config.postId && config.restUrl ) {
-				console.log( 'start', container );
 				start( container );
 			}
 		} );
