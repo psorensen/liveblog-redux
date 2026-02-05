@@ -6,13 +6,13 @@
  * wrapper, then the header (from theme template part or default), then the block inner
  * content.
  *
- * Header template part: if the theme defines liveblog/entry-header.php in its root
- * (i.e. get_template_directory() . '/liveblog/entry-header.php' exists), that file is
- * loaded with get_template_part( 'liveblog/entry-header', null, $header_data ). The
- * template receives the header data as the third parameter (typically $args): timestamp,
- * formatted_time, modified, is_modified, authors, update_id. When Co-Authors Plus is
- * active, authors is an array of co-author objects (e.g. ->display_name). If the theme
- * file does not exist or outputs nothing, the default header markup is used instead.
+ * Header template part: the plugin calls get_template_part( 'liveblog/entry-header', null, $header_data ).
+ * WordPress locates the file using the theme hierarchy (active/child theme first, then parent),
+ * and in multisite each site’s active theme is used. The template receives the header data as
+ * the third parameter (typically $args): timestamp, formatted_time, modified, is_modified,
+ * authors, update_id. When Co-Authors Plus is active, authors is an array of co-author objects
+ * (e.g. ->display_name). If no template part is found or it outputs nothing, the default
+ * header markup is used instead.
  *
  * @package Liveblog
  */
@@ -53,17 +53,15 @@ class Liveblog_Entry_Render {
 
 		$header_data = self::prepare_header_data( $attrs );
 
-		// If the theme has liveblog/entry-header.php, load it with $header_data as $args; else use default markup.
+		// Load theme part (active theme then parent; respects child themes and multisite per-site themes).
 		ob_start();
-		if ( file_exists( get_template_directory() . '/liveblog/entry-header.php' ) ) {
-			get_template_part( 'liveblog/entry-header', null, $header_data );
-		} else {
-			self::default_header_markup( $header_data );
-		}
+		get_template_part( 'liveblog/entry-header', null, $header_data );
 		$header = ob_get_clean();
 
 		if ( '' === trim( (string) $header ) ) {
-			$header = self::default_header_markup( $header_data );
+			ob_start();
+			self::default_header_markup( $header_data );
+			$header = ob_get_clean();
 		}
 
 		$wrapper_attrs = array(

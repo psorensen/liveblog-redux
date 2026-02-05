@@ -45,9 +45,9 @@ Responses for the updates list are cached in a transient (5-minute TTL, keyed by
 
 ## Customizing the entry header
 
-The entry header (time, authors, “Edited” label) is rendered on the server via the `render_block_liveblog/entry` filter. Themes can override it by adding a template part so developers control the markup.
+The entry header (time, authors, “Edited” label) is rendered on the server via the `render_block_liveblog/entry` filter. Themes can override it by adding a template part so developers control the markup. The plugin uses `get_template_part( 'liveblog/entry-header', null, $header_data )`, so WordPress’s normal theme lookup applies: **active theme first** (child theme if in use), then **parent theme**. On multisite, each site’s active theme is used.
 
-1. In your theme directory, add a file at **`liveblog/entry-header.php`** (i.e. `get_template_directory() . '/liveblog/entry-header.php'`). If this file exists, the plugin loads it with `get_template_part( 'liveblog/entry-header', null, $header_data )`.
+1. In your theme directory, add a file at **`liveblog/entry-header.php`**. The plugin loads it when present (in the active/child theme or the parent theme).
 
 2. In that file, the header data is passed as the third argument to `get_template_part`. In the template, use **`$args`** to retrieve the array, then:
 
