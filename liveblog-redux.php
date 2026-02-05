@@ -114,7 +114,9 @@ function print_data_to_footer() {
 
 add_action( 'wp_footer', 'print_data_to_footer' );
 
-// localize some data in the admin area
+/**
+ * Localize data in the admin area.
+ */
 function liveblog_redux_localize_data() {
 	?>
 	<script>
@@ -122,7 +124,7 @@ function liveblog_redux_localize_data() {
 		<?php
 			echo wp_json_encode(
 				array(
-					'capAvailable'  => function_exists( 'get_coauthors' ),
+					'capAvailable' => function_exists( 'get_coauthors' ),
 				)
 			);
 		?>
@@ -131,3 +133,12 @@ function liveblog_redux_localize_data() {
 	<?php
 }
 add_action( 'enqueue_block_editor_assets', 'liveblog_redux_localize_data' );
+
+
+/**
+ * Add title support to the guest-author post type.
+ */
+function liveblog_redux_add_post_type_support() {
+	add_post_type_support( 'guest-author', 'title' );
+}
+add_action( 'init', 'liveblog_redux_add_post_type_support' );
