@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use CoAuthors_Plus;
+
 /**
  * Class Liveblog_REST
  */
@@ -87,25 +89,6 @@ class Liveblog_REST {
 				),
 			)
 		);
-
-		register_rest_route(
-			self::NAMESPACE,
-			'/authors/search',
-			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'search_authors' ),
-				'permission_callback' => function () {
-					return current_user_can( 'edit_posts' );
-				},
-				'args'                => array(
-					'search' => array(
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-				),
-			)
-		);
 	}
 
 	/**
@@ -151,9 +134,11 @@ class Liveblog_REST {
 		$last_modified = (int) get_post_meta( $post_id, self::META_LAST_MODIFIED, true );
 		$cache_key     = self::CACHE_KEY_PREFIX . $post_id . '_' . $last_modified;
 		$cached        = false;
-		if ( $since === 0 ) {
+
+		if ( 0 === $since ) {
 			$cached = get_transient( $cache_key );
 		}
+
 		if ( false !== $cached ) {
 			$all_entries = $cached;
 		} else {
@@ -164,7 +149,7 @@ class Liveblog_REST {
 			if ( is_wp_error( $all_entries ) ) {
 				return $all_entries;
 			}
-			if ( $since === 0 ) {
+			if ( 0 === $since ) {
 				set_transient( $cache_key, $all_entries, self::CACHE_TTL );
 			}
 		}
@@ -183,7 +168,7 @@ class Liveblog_REST {
 			if ( $since > 0 ) {
 				// New = created after client's snapshot (timestamp > since). Do not require modified <= since,
 				// because new entries often have modified set by the editor when the user types before save.
-				$is_new = $ts > $since || ( $ts === 0 && $modified === 0 );
+				$is_new = $ts > $since || ( 0 === $ts && 0 === $modified );
 				// Modified = existed at since (timestamp <= since) but edited after (modified > since).
 				$is_modified = $include_modified && $ts <= $since && $modified > $since;
 				if ( ! $is_new && ! $is_modified ) {
@@ -195,7 +180,7 @@ class Liveblog_REST {
 			if ( $since > 0 && $ts <= $since && $modified > $since ) {
 				$change_type = 'modified';
 			}
-			if ( ! $include_modified && $change_type === 'modified' ) {
+			if ( ! $include_modified && 'modified' === $change_type ) {
 				continue;
 			}
 
@@ -278,13 +263,13 @@ class Liveblog_REST {
 			$attrs    = $entry['attrs'];
 			$ts       = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
 			$modified = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
-			if ( $since === 0 ) {
+			if ( 0 === $since ) {
 				++$new_count;
 				continue;
 			}
-			if ( $ts > $since || ( $ts === 0 && $modified === 0 ) ) {
+			if ( $since < $ts || ( 0 === $ts && 0 === $modified ) ) {
 				++$new_count;
-			} elseif ( $ts <= $since && $modified > $since ) {
+			} elseif ( $since >= $ts && $since < $modified ) {
 				++$modified_count;
 			}
 		}
@@ -296,38 +281,6 @@ class Liveblog_REST {
 				'modified_count' => $modified_count,
 			)
 		);
-	}
-
-	/**
-	 * GET /authors/search (Co-Authors Plus).
-	 *
-	 * @param \WP_REST_Request $request Request.
-	 * @return \WP_REST_Response|\WP_Error
-	 */
-	public function search_authors( $request ) {
-		if ( ! $this->has_coauthors_plus() ) {
-			return new \WP_Error( 'cap_not_available', __( 'Co-Authors Plus is not installed.', 'liveblog' ), array( 'status' => 501 ) );
-		}
-
-		$search = $request->get_param( 'search' );
-		if ( strlen( $search ) < 2 ) {
-			return rest_ensure_response( array() );
-		}
-
-		$authors = $this->search_cap_authors( $search, 10 );
-
-		$items = [];
-
-		foreach ( $authors as $author ) {
-			$items[] = [
-				'id'         => $author['id'],
-				'name'       => $author['display_name'],
-				'type'       => 'user',
-				'avatar_url' => $this->get_coauthor_avatar_url( $author['id'] ),
-			];
-		}
-
-		return new \WP_REST_Response( $items );
 	}
 
 	/**
@@ -425,51 +378,5 @@ class Liveblog_REST {
 	 */
 	private function get_coauthor_avatar_url( $cap_id ) {
 		return get_avatar_url( $cap_id, array( 'size' => 96 ) );
-	}
-
-	/**
-	 * Whether Co-Authors Plus is available.
-	 *
-	 * @return bool
-	 */
-	private function has_coauthors_plus() {
-		return function_exists( 'get_coauthors' ) && class_exists( 'CoAuthors_Guest_Authors' );
-	}
-
-	/**
-	 * Search Co-Authors Plus authors (WP users + guest authors).
-	 * CAP's search_authors() can miss guest authors when their taxonomy term
-	 * description is empty or slug resolution fails. We merge CAP results with
-	 * a direct guest-author post type search so guest authors always appear.
-	 *
-	 * @param string $search Search term.
-	 * @param int    $limit  Max results.
-	 * @return array
-	 */
-	private function search_cap_authors( $search, $limit = 10 ) {
-		$seen_ids = array();
-		$results  = array();
-
-		if ( class_exists( 'CoAuthors_Plus' ) ) {
-			global $coauthors_plus;
-			if ( $coauthors_plus instanceof \CoAuthors_Plus && method_exists( $coauthors_plus, 'search_authors' ) ) {
-				$users = $coauthors_plus->search_authors( $search, array(), $limit );
-				foreach ( (array) $users as $author ) {
-					$id = isset( $author->ID ) ? $author->ID : 0;
-					if ( $id && ! isset( $seen_ids[ $id ] ) ) {
-						$seen_ids[ $id ] = true;
-						$type            = isset( $author->type ) && $author->type === 'guest-author' ? 'guest' : 'wpuser';
-						$results[]       = array(
-							'id'           => 'cap-' . $id,
-							'display_name' => isset( $author->display_name ) ? $author->display_name : '',
-							'avatar_url'   => $this->get_coauthor_avatar_url( $id, $type ),
-							'type'         => $type,
-						);
-					}
-				}
-			}
-		}
-
-		return array_slice( $results, 0, $limit );
 	}
 }

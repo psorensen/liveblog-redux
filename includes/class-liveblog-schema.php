@@ -20,7 +20,7 @@ class Liveblog_Schema {
 	/**
 	 * Register hooks.
 	 */
-	public function __construct(){
+	public function __construct() {
 		add_action( 'wp_head', array( $this, 'output_schema' ) );
 	}
 
@@ -55,7 +55,7 @@ class Liveblog_Schema {
 	 * @return array|null Schema array or null if no entries.
 	 */
 	private function generate_schema( $post ) {
-		$blocks = parse_blocks( $post->post_content );
+		$blocks    = parse_blocks( $post->post_content );
 		$container = $this->find_liveblog_container( $blocks );
 		if ( ! $container || empty( $container['innerBlocks'] ) ) {
 			return null;
@@ -66,15 +66,15 @@ class Liveblog_Schema {
 			return null;
 		}
 
-		$updates = array();
-		$timestamps = array();
+		$updates       = array();
+		$timestamps    = array();
 		$last_modified = (int) get_post_modified_time( 'U', false, $post );
 
 		foreach ( $entries as $entry ) {
 			$update = $this->entry_to_blog_posting_schema( $entry );
 			if ( $update ) {
 				$updates[] = $update;
-				$ts = isset( $entry['attrs']['timestamp'] ) ? (int) $entry['attrs']['timestamp'] : 0;
+				$ts        = isset( $entry['attrs']['timestamp'] ) ? (int) $entry['attrs']['timestamp'] : 0;
 				if ( $ts > 0 ) {
 					$timestamps[] = $ts;
 				}
@@ -92,16 +92,16 @@ class Liveblog_Schema {
 		$coverage_start = ! empty( $timestamps ) ? min( $timestamps ) : (int) get_post_time( 'U', false, $post );
 
 		$schema = array(
-			'@context'           => 'https://schema.org',
-			'@type'               => 'LiveBlogPosting',
-			'headline'            => get_the_title( $post ),
-			'description'         => has_excerpt( $post ) ? get_the_excerpt( $post ) : wp_trim_words( wp_strip_all_tags( $post->post_content ), 35 ),
-			'datePublished'      => get_post_time( 'c', false, $post ),
-			'dateModified'        => date( 'c', $last_modified ),
-			'coverageStartTime'   => date( 'c', $coverage_start ),
-			'author'              => $this->get_post_author_schema( $post ),
-			'publisher'           => $this->get_publisher_schema(),
-			'liveBlogUpdate'      => $updates,
+			'@context'          => 'https://schema.org',
+			'@type'             => 'LiveBlogPosting',
+			'headline'          => get_the_title( $post ),
+			'description'       => has_excerpt( $post ) ? get_the_excerpt( $post ) : wp_trim_words( wp_strip_all_tags( $post->post_content ), 35 ),
+			'datePublished'     => get_post_time( 'c', false, $post ),
+			'dateModified'      => gmdate( 'c', $last_modified ),
+			'coverageStartTime' => gmdate( 'c', $coverage_start ),
+			'author'            => $this->get_post_author_schema( $post ),
+			'publisher'         => $this->get_publisher_schema(),
+			'liveBlogUpdate'    => $updates,
 		);
 
 		return $schema;
@@ -114,7 +114,7 @@ class Liveblog_Schema {
 	 * @return array|null BlogPosting schema or null.
 	 */
 	private function entry_to_blog_posting_schema( $entry ) {
-		$attrs = $entry['attrs'];
+		$attrs     = $entry['attrs'];
 		$timestamp = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
 		if ( $timestamp <= 0 ) {
 			return null;
@@ -124,7 +124,7 @@ class Liveblog_Schema {
 		if ( ! empty( $entry['block'] ) ) {
 			$content = (string) render_block( $entry['block'] );
 		}
-		$content = wp_strip_all_tags( $content );
+		$content  = wp_strip_all_tags( $content );
 		$headline = wp_trim_words( $content, 15 );
 		if ( empty( $headline ) ) {
 			$headline = __( 'Update', 'liveblog' ) . ' ' . date_i18n( get_option( 'time_format' ), $timestamp );
@@ -133,14 +133,14 @@ class Liveblog_Schema {
 		$schema = array(
 			'@type'         => 'BlogPosting',
 			'headline'      => $headline,
-			'datePublished' => date( 'c', $timestamp ),
+			'datePublished' => gmdate( 'c', $timestamp ),
 			'articleBody'   => $content,
 			'author'        => $this->get_entry_authors_schema( $attrs ),
 		);
 
 		$modified = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
 		if ( $modified > 0 && $modified > $timestamp ) {
-			$schema['dateModified'] = date( 'c', $modified );
+			$schema['dateModified'] = gmdate( 'c', $modified );
 		}
 
 		return $schema;
@@ -167,7 +167,7 @@ class Liveblog_Schema {
 			'@type' => 'Person',
 			'name'  => $author->display_name,
 		);
-		$url = get_author_posts_url( $author_id );
+		$url    = get_author_posts_url( $author_id );
 		if ( $url ) {
 			$person['url'] = $url;
 		}
@@ -187,15 +187,15 @@ class Liveblog_Schema {
 		if ( ! empty( $attrs['coauthors'] ) && is_array( $attrs['coauthors'] ) ) {
 			foreach ( $attrs['coauthors'] as $coauthor ) {
 				$name = isset( $coauthor['display_name'] ) ? $coauthor['display_name'] : '';
-				if ( $name === '' ) {
+				if ( '' === $name ) { // Yoda Condition
 					continue;
 				}
 				$person = array(
 					'@type' => 'Person',
 					'name'  => $name,
 				);
-				$id = isset( $coauthor['id'] ) ? $coauthor['id'] : '';
-				if ( $id !== '' ) {
+				$id     = isset( $coauthor['id'] ) ? $coauthor['id'] : '';
+				if ( '' !== $id ) {
 					$cap_id = is_numeric( $id ) ? (int) $id : (int) preg_replace( '/^cap-/', '', $id );
 					if ( $cap_id > 0 ) {
 						$url = get_author_posts_url( $cap_id );
@@ -216,12 +216,12 @@ class Liveblog_Schema {
 					'name'  => __( 'Unknown', 'liveblog' ),
 				);
 			} else {
-				$user = get_userdata( $author_id );
+				$user   = get_userdata( $author_id );
 				$person = array(
 					'@type' => 'Person',
 					'name'  => $user ? $user->display_name : __( 'Unknown', 'liveblog' ),
 				);
-				$url = get_author_posts_url( $author_id );
+				$url    = get_author_posts_url( $author_id );
 				if ( $url ) {
 					$person['url'] = $url;
 				}
@@ -238,14 +238,14 @@ class Liveblog_Schema {
 	 * @return array Publisher Organization schema.
 	 */
 	private function get_publisher_schema() {
-		$logo_url = '';
+		$logo_url    = '';
 		$custom_logo = get_theme_mod( 'custom_logo' );
 		if ( $custom_logo ) {
 			$logo_url = wp_get_attachment_image_url( $custom_logo, 'full' );
 		}
 		$logo = array(
 			'@type' => 'ImageObject',
-			'url'   => $logo_url ?: '',
+			'url'   => $logo_url ? $logo_url : '',
 		);
 
 		return array(
