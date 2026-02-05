@@ -6,35 +6,11 @@
 
 import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 
-export default function save( { attributes } ) {
-	const {
-		updateId = '',
-		timestamp = 0,
-		modified = 0,
-		authorId = 0,
-		coauthors = [],
-		isPinned = false,
-		status = 'published',
-	} = attributes;
+export default function save() {
 
 	const blockProps = useBlockProps.save( {
-		className: [
-			'liveblog-entry',
-			isPinned && 'is-pinned',
-			modified > 0 && 'has-modified',
-		].filter( Boolean ).join( ' ' ),
-		'data-update-id': updateId || undefined,
-		'data-timestamp': timestamp || undefined,
-		'data-modified': modified || undefined,
-		'data-author-id': authorId || undefined,
-		'data-status': status,
-		'data-pinned': isPinned ? '1' : undefined,
+		className: [ 'liveblog-entry' ]
 	} );
-
-	const coauthorsJson = coauthors.length > 0 ? JSON.stringify( coauthors ) : undefined;
-	if ( coauthorsJson ) {
-		blockProps[ 'data-coauthors' ] = coauthorsJson;
-	}
 
 	return (
 		<div { ...blockProps }>

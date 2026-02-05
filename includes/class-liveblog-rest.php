@@ -315,7 +315,19 @@ class Liveblog_REST {
 		}
 
 		$authors = $this->search_cap_authors( $search, 10 );
-		return rest_ensure_response( $authors );
+
+		$items = [];
+
+		foreach ( $authors as $author ) {
+			$items[] = [
+				'id'         => $author['id'],
+				'name'       => $author['display_name'],
+				'type'       => 'user',
+				'avatar_url' => $this->get_coauthor_avatar_url( $author['id'] ),
+			];
+		}
+
+		return new \WP_REST_Response( $items );
 	}
 
 	/**
@@ -409,10 +421,9 @@ class Liveblog_REST {
 	 * Get avatar URL for a coauthor (WP user or Co-Authors Plus guest author).
 	 *
 	 * @param int|string $cap_id Numeric ID (WP user ID or guest author post ID).
-	 * @param string     $type   'wpuser' or 'guest'.
 	 * @return string Avatar URL.
 	 */
-	private function get_coauthor_avatar_url( $cap_id, $type ) {
+	private function get_coauthor_avatar_url( $cap_id ) {
 		return get_avatar_url( $cap_id, array( 'size' => 96 ) );
 	}
 
@@ -439,8 +450,6 @@ class Liveblog_REST {
 		$seen_ids = array();
 		$results  = array();
 
-		// 1) CAP search (WP users and any guest authors CAP finds via taxonomy).
-		// Use the global Co-Authors Plus instance so guest_authors is initialized (init has run).
 		if ( class_exists( 'CoAuthors_Plus' ) ) {
 			global $coauthors_plus;
 			if ( $coauthors_plus instanceof \CoAuthors_Plus && method_exists( $coauthors_plus, 'search_authors' ) ) {
@@ -462,80 +471,5 @@ class Liveblog_REST {
 		}
 
 		return array_slice( $results, 0, $limit );
-	}
-
-	/**
-	 * Search guest authors by querying the guest-author post type and display_name meta.
-	 *
-	 * @param string $search      Search term.
-	 * @param int    $limit       Max results.
-	 * @param array  $exclude_ids Coauthor IDs (e.g. from CAP search) to exclude.
-	 * @return array
-	 */
-	private function search_guest_authors_direct( $search, $limit, $exclude_ids = array() ) {
-		if ( ! $this->has_coauthors_plus() || ! class_exists( 'CoAuthors_Guest_Authors' ) ) {
-			return array();
-		}
-		$search = trim( $search );
-		if ( strlen( $search ) < 1 ) {
-			return array();
-		}
-		$like             = '%' . $GLOBALS['wpdb']->esc_like( $search ) . '%';
-		$post_type        = 'guest-author';
-		$meta_key_display = $this->get_guest_author_meta_key( 'display_name' );
-		$meta_key_login   = $this->get_guest_author_meta_key( 'user_login' );
-		$exclude_sql      = '';
-		if ( ! empty( $exclude_ids ) ) {
-			$exclude_ids = array_map( 'absint', $exclude_ids );
-			$exclude_sql = ' AND p.ID NOT IN (' . implode( ',', $exclude_ids ) . ')';
-		}
-		$limit    = max( 1, min( 25, (int) $limit ) );
-		$query    = $GLOBALS['wpdb']->prepare(
-			"SELECT DISTINCT p.ID FROM {$GLOBALS['wpdb']->posts} p
-			LEFT JOIN {$GLOBALS['wpdb']->postmeta} pm ON p.ID = pm.post_id AND ( pm.meta_key = %s OR pm.meta_key = %s )
-			WHERE p.post_type = %s AND p.post_status = 'publish'
-			AND ( p.post_title LIKE %s OR ( pm.meta_key IS NOT NULL AND pm.meta_value LIKE %s ) )
-			" . $exclude_sql . '
-			ORDER BY p.post_title ASC
-			LIMIT %d',
-			$meta_key_display,
-			$meta_key_login,
-			$post_type,
-			$like,
-			$like,
-			$limit
-		);
-		$post_ids = $GLOBALS['wpdb']->get_col( $query ); // phpcs:ignore
-		if ( empty( $post_ids ) ) {
-			return array();
-		}
-		$guest_authors = \CoAuthors_Guest_Authors::get_instance();
-		$out           = array();
-		foreach ( $post_ids as $post_id ) {
-			$ga = $guest_authors->get_guest_author_by( 'ID', (int) $post_id );
-			if ( ! $ga || empty( $ga->display_name ) ) {
-				continue;
-			}
-			$out[] = array(
-				'id'           => 'cap-' . $ga->ID,
-				'display_name' => $ga->display_name,
-				'avatar_url'   => $this->get_coauthor_avatar_url( $ga->ID, 'guest' ),
-				'type'         => 'guest',
-			);
-		}
-		return $out;
-	}
-
-	/**
-	 * Meta key used by Co-Authors Plus for guest author fields (prefixed with cap-).
-	 *
-	 * @param string $field Field key (e.g. display_name, user_login).
-	 * @return string
-	 */
-	private function get_guest_author_meta_key( $field ) {
-		if ( 0 === stripos( $field, 'cap-' ) ) {
-			return $field;
-		}
-		return 'cap-' . $field;
 	}
 }

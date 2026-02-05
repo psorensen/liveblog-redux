@@ -14,7 +14,9 @@
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start": "wp-scripts start --webpack-copy-php --blocks-manifest"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"@10up/block-components": "^1.22.1"
+	},
 	"devDependencies": {
 		"@wordpress/api-fetch": "*",
 		"@wordpress/scripts": "^31.1.0"

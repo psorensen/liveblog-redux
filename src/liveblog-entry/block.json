@@ -30,11 +30,7 @@
 			"type": "number",
 			"default": 0
 		},
-		"authorId": {
-			"type": "number",
-			"default": 0
-		},
-		"coauthors": {
+		"authors":{
 			"type": "array",
 			"default": []
 		},
