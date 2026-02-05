@@ -114,3 +114,20 @@ function print_data_to_footer() {
 
 add_action( 'wp_footer', 'print_data_to_footer' );
 
+// localize some data in the admin area
+function liveblog_redux_localize_data() {
+	?>
+	<script>
+		var liveblogData = 
+		<?php
+			echo wp_json_encode(
+				array(
+					'capAvailable'  => function_exists( 'get_coauthors' ),
+				)
+			);
+		?>
+		;
+	</script>
+	<?php
+}
+add_action( 'enqueue_block_editor_assets', 'liveblog_redux_localize_data' );
