@@ -17,6 +17,11 @@ import { useSelect } from '@wordpress/data';
 import { useEffect, useRef } from '@wordpress/element';
 import CoAuthorsSelector from './components/coauthors-selector';
 import './editor.scss';
+import { PostContext, PostTitle } from '@10up/block-components';
+
+
+
+
 
 const generateUpdateId = () => {
 	if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -36,19 +41,16 @@ const formatTime = (ts) => {
 };
 
 export default function Edit({ clientId, attributes, setAttributes }) {
-	console.log('attributes from edit.js', attributes);
 	const {
 		updateId,
 		timestamp,
 		modified,
 		authors,
-		isPinned,
 	} = attributes;
 
 	const blockProps = useBlockProps({
 		className: [
 			'liveblog-entry',
-			isPinned && 'is-pinned',
 			modified > 0 && 'has-modified',
 		].filter(Boolean).join(' '),
 	});
@@ -90,33 +92,18 @@ export default function Edit({ clientId, attributes, setAttributes }) {
 		}
 	}, [innerContentSignature]);
 
-	const togglePinned = () => setAttributes({ isPinned: !isPinned });
 	return (
 		<>
 			<InspectorControls>
 				<PanelBody title={__('Authors', 'liveblog')} initialOpen={true}>
 					<CoAuthorsSelector
 						value={authors}
-						onChange={(next) => {
-							setAttributes({ authors: [...authors, next] });
+						onChange={(pickedContent) => {
+							setAttributes({ authors: pickedContent });
 						}}
 					/>
 				</PanelBody>
 			</InspectorControls>
-			<BlockControls>
-				<ToolbarGroup>
-					<ToolbarButton
-						icon={
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-								<path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-							</svg>
-						}
-						label={isPinned ? __('Unpin entry', 'liveblog') : __('Pin entry', 'liveblog')}
-						isPressed={isPinned}
-						onClick={togglePinned}
-					/>
-				</ToolbarGroup>
-			</BlockControls>
 			<div {...blockProps}>
 				<div className="liveblog-entry__header">
 					{timestamp > 0 && (
@@ -126,11 +113,15 @@ export default function Edit({ clientId, attributes, setAttributes }) {
 					)}
 					{authors && authors.length > 0 && (
 						authors.map((author) => (
-							<span className="liveblog-entry__authors">{author.name}</span>
+							<PostContext postId={author.id} postType={'guest-author'} isEditable={false} >
+								<PostTitle tagName="span" />
+							</PostContext>
 						))
 					)}
 					{modified > 0 && (
-						<span className="liveblog-entry__edited">{__('Edited', 'liveblog')}</span>
+						<span className="liveblog-entry__edited">
+							{__('Edited', 'liveblog')}
+						</span>
 					)}
 				</div>
 				<div className="liveblog-entry__content">
