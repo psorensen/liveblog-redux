@@ -43,6 +43,34 @@ Base namespace: `liveblog/v1`.
 
 Responses for the updates list are cached in a transient (5-minute TTL, keyed by post ID and last-modified). Cache is cleared when the post is saved.
 
+## Customizing the entry header
+
+The entry header (time, authors, “Edited” label) is rendered on the server via the `render_block_liveblog/entry` filter. Themes can override it by adding a template part so developers control the markup.
+
+1. In your theme directory, add a file at **`liveblog/entry-header.php`** (i.e. `get_template_directory() . '/liveblog/entry-header.php'`). If this file exists, the plugin loads it with `get_template_part( 'liveblog/entry-header', null, $header_data )`.
+
+2. In that file, the header data is passed as the third argument to `get_template_part`. In the template, use **`$args`** to retrieve the array, then:
+
+   ```php
+   $timestamp      = $args['timestamp'];
+   $formatted_time = $args['formatted_time'];
+   $modified       = $args['modified'];
+   $is_modified    = $args['is_modified'];
+   $authors        = $args['authors'];
+   $update_id      = $args['update_id'];
+   ```
+
+   | Key | Type | Description |
+   |-----|------|-------------|
+   | `timestamp` | int | Unix timestamp of the entry. |
+   | `formatted_time` | string | Time formatted per site’s time format. |
+   | `modified` | int | Unix timestamp of last edit, or 0. |
+   | `is_modified` | bool | Whether the entry was edited. |
+   | `authors` | array | When Co-Authors Plus is active, array of co-author objects (e.g. `$author->display_name`). |
+   | `update_id` | string | Unique ID for the entry (for DOM/JS). |
+
+   If the theme does not define `liveblog/entry-header.php`, the plugin outputs a default header using BEM classes (e.g. `liveblog-entry__header`, `liveblog-entry__time`, `liveblog-entry__authors`).
+
 ## Development
 
 From the plugin root:
@@ -61,8 +89,9 @@ Block registration uses the [blocks manifest](https://make.wordpress.org/core/20
 
 | Path | Purpose |
 |------|---------|
-| `liveblog-block.php` | Plugin bootstrap; block registration, REST init. |
+| `liveblog-redux.php` | Plugin bootstrap; block registration, REST init. |
 | `includes/class-liveblog-rest.php` | REST routes, cache invalidation, author search, footer data for front-end polling. |
+| `includes/class-liveblog-entry-render.php` | Server-side entry render via `render_block_liveblog/entry` filter; loads theme `liveblog/entry-header.php` when present. |
 | `src/liveblog/` | Container block (edit, save, view). |
 | `src/liveblog-entry/` | Entry block (TipTap editor, save, view, coauthors selector). |
 | `build/` | Compiled block assets (after `npm run build`). |

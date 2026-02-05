@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/includes/class-liveblog-rest.php';
 require_once __DIR__ . '/includes/class-liveblog-schema.php';
+require_once __DIR__ . '/includes/class-liveblog-entry-render.php';
 
 /**
  * Registers the block using a `blocks-manifest.php` file, which improves the performance of block type registration.
@@ -61,6 +62,12 @@ function liveblog_liveblog_block_block_init() {
 	}
 }
 add_action( 'init', 'liveblog_liveblog_block_block_init' );
+
+/**
+ * Register server-side render for the entry block (header via template part).
+ * Priority 20 so block type is already registered from metadata.
+ */
+add_action( 'init', array( 'Liveblog_Entry_Render', 'register' ), 20 );
 
 /**
  * Bootstrap REST API and cache invalidation.
