@@ -19,7 +19,7 @@
 	"attributes": {
 		"allowedBlocks": {
 			"type": "array",
-			"default": ["liveblog/entry"]
+			"default": [ "liveblog/entry" ]
 		}
 	}
 }

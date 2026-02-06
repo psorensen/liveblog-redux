@@ -11,31 +11,34 @@ import { __ } from '@wordpress/i18n';
 import { PostContext, PostTitle } from '@10up/block-components';
 import { formatTime } from '../utils';
 
-export default function EntryHeader({ timestamp, authors, modified }) {
+export default function EntryHeader( { timestamp, authors, modified } ) {
 	return (
 		<div className="liveblog-entry__header">
-			{timestamp > 0 && (
+			{ timestamp > 0 && (
 				<time
 					className="liveblog-entry__time"
-					dateTime={new Date(timestamp * 1000).toISOString()}
+					dateTime={ new Date( timestamp * 1000 ).toISOString() }
 				>
-					{formatTime(timestamp)}
+					{ formatTime( timestamp ) }
 				</time>
-			)}
-			{authors && authors.length > 0 &&
-				authors.map((author) => (
+			) }
+			{ authors &&
+				authors.length > 0 &&
+				authors.map( ( author ) => (
 					<PostContext
-						key={author.id}
-						postId={author.id}
+						key={ author.id }
+						postId={ author.id }
 						postType="guest-author"
-						isEditable={false}
+						isEditable={ false }
 					>
 						<PostTitle tagName="span" />
 					</PostContext>
-				))}
-			{modified > 0 && (
-				<span className="liveblog-entry__edited">{__('Edited', 'liveblog')}</span>
-			)}
+				) ) }
+			{ modified > 0 && (
+				<span className="liveblog-entry__edited">
+					{ __( 'Edited', 'liveblog' ) }
+				</span>
+			) }
 		</div>
 	);
 }

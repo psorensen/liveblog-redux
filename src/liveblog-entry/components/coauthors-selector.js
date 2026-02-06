@@ -10,31 +10,42 @@ import { __ } from '@wordpress/i18n';
 import { BaseControl } from '@wordpress/components';
 import { ContentPicker } from '@10up/block-components/components/content-picker';
 
-export default function CoAuthorsSelector({ value = [], onChange }) {
+export default function CoAuthorsSelector( { value = [], onChange } ) {
 	const capAvailable = window.liveblogData?.capAvailable ?? false;
-	
+
 	return (
 		<BaseControl
-			label={__('Authors', 'liveblog')}
+			label={ __( 'Authors', 'liveblog' ) }
 			help={
 				capAvailable === false
-					? __('Co-Authors Plus is not active. Add the current user or leave empty.', 'liveblog')
-					: __('Search to add authors and guest authors.', 'liveblog')
+					? __(
+							'Co-Authors Plus is not active. Add the current user or leave empty.',
+							'liveblog'
+					  )
+					: __(
+							'Search to add authors and guest authors.',
+							'liveblog'
+					  )
 			}
 		>
-			{capAvailable ? (
+			{ capAvailable ? (
 				<ContentPicker
-					contentTypes={['guest-author']}
-					content={value}
-					maxContentItems={5}
+					contentTypes={ [ 'guest-author' ] }
+					content={ value }
+					maxContentItems={ 5 }
 					isOrderable
-					onPickChange={item =>{
-						onChange(item)
-					}}
+					onPickChange={ ( item ) => {
+						onChange( item );
+					} }
 				/>
 			) : (
-				<p>{__('Co-Authors Plus is not active. Add the current user or leave empty.', 'liveblog')}</p>
-			)}
+				<p>
+					{ __(
+						'Co-Authors Plus is not active. Add the current user or leave empty.',
+						'liveblog'
+					) }
+				</p>
+			) }
 		</BaseControl>
 	);
 }

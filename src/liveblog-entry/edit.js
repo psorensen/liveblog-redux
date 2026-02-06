@@ -6,7 +6,11 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { useBlockProps, InnerBlocks, InspectorControls } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	InnerBlocks,
+	InspectorControls,
+} from '@wordpress/block-editor';
 import { PanelBody } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { useEffect, useRef } from '@wordpress/element';
@@ -15,76 +19,81 @@ import EntryHeader from './components/EntryHeader';
 import { generateUpdateId } from './utils';
 import './editor.scss';
 
-export default function Edit({ clientId, attributes, setAttributes }) {
-	const {
-		updateId,
-		timestamp,
-		modified,
-		authors,
-	} = attributes;
+export default function Edit( { clientId, attributes, setAttributes } ) {
+	const { updateId, timestamp, modified, authors } = attributes;
 
-	const blockProps = useBlockProps({
-		className: [
-			'liveblog-entry',
-			modified > 0 && 'has-modified',
-		].filter(Boolean).join(' '),
-	});
+	const blockProps = useBlockProps( {
+		className: [ 'liveblog-entry', modified > 0 && 'has-modified' ]
+			.filter( Boolean )
+			.join( ' ' ),
+	} );
 
-	const currentUser = useSelect((select) => select('core')?.getCurrentUser(), []);
+	const currentUser = useSelect(
+		( select ) => select( 'core' )?.getCurrentUser(),
+		[]
+	);
 
 	const innerContentSignature = useSelect(
-		(select) => {
-			const block = select('core/block-editor').getBlock(clientId);
-			if (!block?.innerBlocks?.length) return '';
+		( select ) => {
+			const block = select( 'core/block-editor' ).getBlock( clientId );
+			if ( ! block?.innerBlocks?.length ) return '';
 			return JSON.stringify(
-				block.innerBlocks.map((b) => ({ name: b.name, attributes: b.attributes }))
+				block.innerBlocks.map( ( b ) => ( {
+					name: b.name,
+					attributes: b.attributes,
+				} ) )
 			);
 		},
-		[clientId]
+		[ clientId ]
 	);
-	const isInitialMount = useRef(true);
-	const lastModifiedSet = useRef(0);
+	const isInitialMount = useRef( true );
+	const lastModifiedSet = useRef( 0 );
 	const MIN_MODIFIED_INTERVAL = 2;
 
-	useEffect(() => {
+	useEffect( () => {
 		const updates = {};
-		if (!updateId) updates.updateId = generateUpdateId();
-		if (!timestamp) updates.timestamp = Math.floor(Date.now() / 1000);
-		if (Object.keys(updates).length > 0) {
-			setAttributes(updates);
+		if ( ! updateId ) updates.updateId = generateUpdateId();
+		if ( ! timestamp ) updates.timestamp = Math.floor( Date.now() / 1000 );
+		if ( Object.keys( updates ).length > 0 ) {
+			setAttributes( updates );
 		}
-	}, [currentUser?.id]);
+	}, [ currentUser?.id ] );
 
-	useEffect(() => {
-		if (isInitialMount.current) {
+	useEffect( () => {
+		if ( isInitialMount.current ) {
 			isInitialMount.current = false;
 			return;
 		}
-		const now = Math.floor(Date.now() / 1000);
-		if (now - lastModifiedSet.current >= MIN_MODIFIED_INTERVAL) {
+		const now = Math.floor( Date.now() / 1000 );
+		if ( now - lastModifiedSet.current >= MIN_MODIFIED_INTERVAL ) {
 			lastModifiedSet.current = now;
-			setAttributes({ modified: now });
+			setAttributes( { modified: now } );
 		}
-	}, [innerContentSignature]);
+	}, [ innerContentSignature ] );
 
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={__('Authors', 'liveblog')} initialOpen={true}>
+				<PanelBody
+					title={ __( 'Authors', 'liveblog' ) }
+					initialOpen={ true }
+				>
 					<CoAuthorsSelector
-						value={authors}
-						onChange={(pickedContent) => {
-							setAttributes({ authors: pickedContent });
-						}}
+						value={ authors }
+						onChange={ ( pickedContent ) => {
+							setAttributes( { authors: pickedContent } );
+						} }
 					/>
 				</PanelBody>
 			</InspectorControls>
-			<div {...blockProps}>
-				<EntryHeader timestamp={timestamp} authors={authors} modified={modified} />
+			<div { ...blockProps }>
+				<EntryHeader
+					timestamp={ timestamp }
+					authors={ authors }
+					modified={ modified }
+				/>
 				<div className="liveblog-entry__content">
-					<InnerBlocks
-						templateLock={false}
-					/>
+					<InnerBlocks templateLock={ false } />
 				</div>
 			</div>
 		</>

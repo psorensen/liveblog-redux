@@ -16,7 +16,7 @@
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",
 	"viewScript": "file:./view.js",
-	"parent": ["liveblog/container"],
+	"parent": [ "liveblog/container" ],
 	"attributes": {
 		"updateId": {
 			"type": "string",
@@ -30,7 +30,7 @@
 			"type": "number",
 			"default": 0
 		},
-		"authors":{
+		"authors": {
 			"type": "array",
 			"default": []
 		},

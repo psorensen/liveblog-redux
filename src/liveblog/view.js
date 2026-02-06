@@ -11,63 +11,68 @@ import { getConfig } from './view/constants.js';
 import { getOriginalTitle, setUnreadCount } from './view/view-state.js';
 import { poll, scheduleNext } from './view/polling.js';
 
-function start(container) {
+function start( container ) {
 	const config = getConfig();
-	if (!config.postId || !config.restUrl) {
+	if ( ! config.postId || ! config.restUrl ) {
 		return;
 	}
-	container.setAttribute('data-post-id', config.postId);
-	container.setAttribute('data-rest-url', config.restUrl);
-	poll(container, config);
+	container.setAttribute( 'data-post-id', config.postId );
+	container.setAttribute( 'data-rest-url', config.restUrl );
+	poll( container, config );
 }
 
 function onVisibilityChange() {
-	if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-		setUnreadCount(0);
+	if (
+		typeof document !== 'undefined' &&
+		document.visibilityState === 'visible'
+	) {
+		setUnreadCount( 0 );
 	}
-	document.querySelectorAll('.liveblog-container').forEach((container) => {
-		if (!container._liveblogState) {
-			return;
-		}
-		const state = container._liveblogState;
-		if (!state || !state.timerId) {
-			return;
-		}
-		clearTimeout(state.timerId);
-		state.timerId = null;
-		const config = getConfig();
-		scheduleNext(container, config);
-	});
+	document
+		.querySelectorAll( '.liveblog-container' )
+		.forEach( ( container ) => {
+			if ( ! container._liveblogState ) {
+				return;
+			}
+			const state = container._liveblogState;
+			if ( ! state || ! state.timerId ) {
+				return;
+			}
+			clearTimeout( state.timerId );
+			state.timerId = null;
+			const config = getConfig();
+			scheduleNext( container, config );
+		} );
 }
 
 function init() {
 	getOriginalTitle();
-	const containers = document.querySelectorAll('.liveblog-container');
+	const containers = document.querySelectorAll( '.liveblog-container' );
 	let started = false;
-	containers.forEach((container) => {
+	containers.forEach( ( container ) => {
 		const config = getConfig();
-		if (config.postId && config.restUrl) {
-			start(container);
+		if ( config.postId && config.restUrl ) {
+			start( container );
 			started = true;
 		}
-	});
-	if (typeof document.hidden !== 'undefined') {
-		document.addEventListener('visibilitychange', onVisibilityChange);
+	} );
+	if ( typeof document.hidden !== 'undefined' ) {
+		document.addEventListener( 'visibilitychange', onVisibilityChange );
 	}
-	if (!started && containers.length > 0) {
-		requestAnimationFrame(() => {
-			containers.forEach((container) => {
+	if ( ! started && containers.length > 0 ) {
+		requestAnimationFrame( () => {
+			containers.forEach( ( container ) => {
 				const config = getConfig();
-				if (config.postId && config.restUrl) {
-					start(container);
+				if ( config.postId && config.restUrl ) {
+					start( container );
 				}
-			});
-		});
+			} );
+		} );
 	}
 }
 
-if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', init);
+if ( document.readyState === 'loading' ) {
+	document.addEventListener( 'DOMContentLoaded', init );
 } else {
 	init();
 }

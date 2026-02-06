@@ -17,11 +17,17 @@ export const LOAD_MORE_PAGE_SIZE = 5;
  * @returns {{ postId: number, restUrl: string, interval: number }}
  */
 export function getConfig() {
-	const data = typeof window !== 'undefined' && window.liveblogData ? window.liveblogData : {};
+	const data =
+		typeof window !== 'undefined' && window.liveblogData
+			? window.liveblogData
+			: {};
 	const { postId, restUrl, interval } = data;
 	return {
 		postId: postId || 0,
 		restUrl: restUrl || '',
-		interval: typeof interval === 'number' && interval > 0 ? interval : DEFAULT_INTERVAL,
+		interval:
+			typeof interval === 'number' && interval > 0
+				? interval
+				: DEFAULT_INTERVAL,
 	};
 }
