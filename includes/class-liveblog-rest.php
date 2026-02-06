@@ -63,6 +63,11 @@ class Liveblog_REST {
 						'minimum'           => 1,
 						'maximum'           => 100,
 					),
+					'before'           => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+						'default'           => 0,
+					),
 				),
 			)
 		);
@@ -130,6 +135,7 @@ class Liveblog_REST {
 		$since            = (int) $request['since'];
 		$include_modified = (bool) $request['include_modified'];
 		$per_page         = (int) $request['per_page'];
+		$before           = (int) $request['before'];
 
 		$last_modified = (int) get_post_meta( $post_id, self::META_LAST_MODIFIED, true );
 		$cache_key     = self::CACHE_KEY_PREFIX . $post_id . '_' . $last_modified;
@@ -164,6 +170,10 @@ class Liveblog_REST {
 			$ts        = isset( $attrs['timestamp'] ) ? (int) $attrs['timestamp'] : 0;
 			$modified  = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
 			$update_id = isset( $attrs['updateId'] ) ? $attrs['updateId'] : '';
+
+			if ( $before > 0 && $ts >= $before ) {
+				continue;
+			}
 
 			if ( $since > 0 ) {
 				// New = created after client's snapshot (timestamp > since). Do not require modified <= since,
@@ -224,11 +234,13 @@ class Liveblog_REST {
 			}
 		}
 
+		$has_more = $before > 0 ? ( $count >= $per_page ) : ( count( $all_entries ) > $count );
+
 		return rest_ensure_response(
 			array(
 				'updates'       => $updates,
 				'last_modified' => $last_modified_response,
-				'has_more'      => count( $all_entries ) > $count,
+				'has_more'      => $has_more,
 			)
 		);
 	}

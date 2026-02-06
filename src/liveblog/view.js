@@ -14,6 +14,8 @@
 	const SCROLL_TOP_THRESHOLD = 200;
 	const BANNER_AUTO_DISMISS_MS = 30000;
 	const ENTRY_ENTER_ANIMATION_MS = 300;
+	const INITIAL_PAGE_SIZE = 5;
+	const LOAD_MORE_PAGE_SIZE = 5;
 
 	const getConfig = () => {
 		const { postId, restUrl, interval } = liveblogData || {};
@@ -106,8 +108,68 @@
 	const insertNewEntry = ( container, el ) => {
 		if ( ! el ) return;
 		el.classList.add( 'liveblog-entry--enter' );
-		container.insertBefore( el, container.firstChild );
+		const loadMoreBtn = container.querySelector( '.liveblog-load-more' );
+		const insertBefore = loadMoreBtn || container.firstChild;
+		container.insertBefore( el, insertBefore );
 		setTimeout( () => el.classList.remove( 'liveblog-entry--enter' ), ENTRY_ENTER_ANIMATION_MS );
+	};
+
+	const getOrCreateLoadMoreButton = ( container ) => {
+		let btn = container.querySelector( '.liveblog-load-more' );
+		if ( btn ) return btn;
+		btn = document.createElement( 'button' );
+		btn.type = 'button';
+		btn.className = 'liveblog-load-more';
+		btn.textContent = 'Load more';
+		const state = container._liveblogState;
+		btn.addEventListener( 'click', () => {
+			if ( state.loadingMore || ! state.hasMore ) return;
+			const cfg = getConfig( container );
+			if ( ! cfg.restUrl ) return;
+			state.loadingMore = true;
+			btn.disabled = true;
+			btn.textContent = 'Loading…';
+			const url = `${ cfg.restUrl }?before=${ state.oldestTimestamp }&per_page=${ LOAD_MORE_PAGE_SIZE }&_=${ Date.now() }`;
+			fetch( url )
+				.then( ( res ) => {
+					if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );
+					return res.json();
+				} )
+				.then( ( data ) => {
+					if ( ! data.updates || data.updates.length === 0 ) {
+						state.hasMore = false;
+						btn.remove();
+						return;
+					}
+					let minTs = state.oldestTimestamp;
+					const fragment = document.createDocumentFragment();
+					data.updates.forEach( ( update ) => {
+						const el = buildNewEntryElement( update );
+						if ( el ) {
+							fragment.appendChild( el );
+							const ts = update.timestamp || 0;
+							if ( ts > 0 && ( minTs === 0 || ts < minTs ) ) minTs = ts;
+						}
+					} );
+					container.insertBefore( fragment, btn );
+					state.oldestTimestamp = minTs > 0 ? minTs : state.oldestTimestamp;
+					state.hasMore = !! data.has_more;
+					if ( ! state.hasMore ) btn.remove();
+				} )
+				.catch( () => {
+					state.hasMore = true;
+					btn.textContent = 'Load more';
+					btn.disabled = false;
+				} )
+				.finally( () => {
+					state.loadingMore = false;
+					if ( btn.parentNode ) {
+						btn.textContent = 'Load more';
+						btn.disabled = false;
+					}
+				} );
+		} );
+		return btn;
 	};
 
 	const getGlobalQueuedNewCount = () => {
@@ -237,10 +299,15 @@
 			backoff: 0,
 			timerId: null,
 			queuedNew: [],
+			oldestTimestamp: 0,
+			hasMore: false,
+			loadingMore: false,
+			initialized: false,
 		};
 		container._liveblogState = state;
 
-		const url = `${ config.restUrl }?since=${ state.lastModified }&per_page=50&_=${ Date.now() }`;
+		const perPage = state.lastModified === 0 ? INITIAL_PAGE_SIZE : 50;
+		const url = `${ config.restUrl }?since=${ state.lastModified }&per_page=${ perPage }&_=${ Date.now() }`;
 
 		const wasInitialSync = state.lastModified === 0;
 		fetch( url )
@@ -251,7 +318,26 @@
 			.then( ( data ) => {
 				state.backoff = 0;
 				if ( data.last_modified ) state.lastModified = data.last_modified;
-				if ( ! wasInitialSync && data.updates && data.updates.length > 0 ) {
+				if ( wasInitialSync && data.updates && ! state.initialized ) {
+					state.initialized = true;
+					let minTs = 0;
+					const fragment = document.createDocumentFragment();
+					data.updates.forEach( ( update ) => {
+						const el = buildNewEntryElement( update );
+						if ( el ) {
+							fragment.appendChild( el );
+							const ts = update.timestamp || 0;
+							if ( ts > 0 && ( minTs === 0 || ts < minTs ) ) minTs = ts;
+						}
+					} );
+					container.innerHTML = '';
+					container.appendChild( fragment );
+					state.oldestTimestamp = minTs;
+					state.hasMore = !! data.has_more;
+					if ( state.hasMore ) {
+						container.appendChild( getOrCreateLoadMoreButton( container ) );
+					}
+				} else if ( ! wasInitialSync && data.updates && data.updates.length > 0 ) {
 					processUpdates( container, data.updates );
 				}
 			} )
