@@ -8,20 +8,10 @@
 import { __ } from '@wordpress/i18n';
 import { createBlock } from '@wordpress/blocks';
 import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
-import { useEffect } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
-import {
-	__experimentalHStack as HStack,
-	__experimentalText as Text,
-	Button,
-} from '@wordpress/components';
+import { __experimentalHStack as HStack } from '@wordpress/components';
+import AddEntryButton from './components/AddEntryButton';
 import './editor.scss';
-
-const PlusIcon = () => (
-	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-		<path d="M11 12.5V17H12.5V12.5H17V11H12.5V6H11V11H6V12.5H11Z" />
-	</svg>
-);
 
 const ALLOWED_BLOCKS = ['liveblog/entry'];
 
@@ -57,17 +47,8 @@ export default function Edit({ clientId, attributes }) {
 	return (
 		<div {...blockProps}>
 
-			<HStack
-				alignment="right"
-			>
-				<Button
-					className="liveblog-container__appender"
-					onClick={addEntryAtTop}
-					icon={PlusIcon}
-					variant="primary"
-				>
-					{__('Add new entry', 'liveblog')}
-				</Button>
+			<HStack alignment="right">
+				<AddEntryButton onClick={addEntryAtTop} />
 			</HStack>
 			<InnerBlocks
 				allowedBlocks={allowedBlocks}

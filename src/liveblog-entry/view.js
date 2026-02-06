@@ -19,7 +19,5 @@
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-metadata/#view-script
  */
- 
-/* eslint-disable no-console */
-console.log("Hello World! (from create-block-liveblog-entry block)");
-/* eslint-enable no-console */
+
+// Entry block has no front-end script behavior; container view.js handles polling.
