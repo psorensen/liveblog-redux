@@ -11,6 +11,7 @@ import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { __experimentalHStack as HStack } from '@wordpress/components';
 import AddEntryButton from './components/AddEntryButton';
+import Badge from './components/Badge';
 import './editor.scss';
 
 const ALLOWED_BLOCKS = ['liveblog/entry'];
@@ -47,8 +48,9 @@ export default function Edit({ clientId, attributes }) {
 	return (
 		<div {...blockProps}>
 
-			<HStack alignment="right">
+			<HStack justify="space-between" style={{ marginBottom: '1em' }}>
 				<AddEntryButton onClick={addEntryAtTop} />
+				<Badge title={__('Liveblog', 'liveblog')} count={innerBlockCount} />
 			</HStack>
 			<InnerBlocks
 				allowedBlocks={allowedBlocks}
