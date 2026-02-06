@@ -31,9 +31,15 @@ export default function Edit( { clientId, attributes } ) {
 		[ clientId ]
 	);
 
-	const { insertBlocks } = useDispatch( 'core/block-editor' );
+	// Resolve block hierarchy after insert; used to focus the new entry's heading.
+	const { getBlock } = useSelect( ( select ) => ( {
+		getBlock: select( 'core/block-editor' ).getBlock,
+	} ), [] );
+
+	const { insertBlocks, selectBlock } = useDispatch( 'core/block-editor' );
 
 	const addEntryAtTop = () => {
+		// 1. Create and insert a new liveblog/entry at the top (heading + paragraph).
 		const entryBlock = createBlock( 'liveblog/entry', {}, [
 			createBlock( 'core/heading', {
 				level: 2,
@@ -44,6 +50,18 @@ export default function Edit( { clientId, attributes } ) {
 			} ),
 		] );
 		insertBlocks( [ entryBlock ], 0, clientId );
+
+		// 2. Focus the heading inside the new entry so the user can type the title.
+		// Store updates synchronously, so the new entry is already at index 0.
+		const container = getBlock( clientId );
+		const entryClientId = container?.innerBlocks?.[ 0 ]?.clientId;
+		if ( entryClientId ) {
+			const entry = getBlock( entryClientId );
+			const headingClientId = entry?.innerBlocks?.[ 0 ]?.clientId;
+			if ( headingClientId ) {
+				selectBlock( headingClientId );
+			}
+		}
 	};
 
 	return (
