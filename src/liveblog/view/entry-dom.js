@@ -13,6 +13,7 @@ export function buildNewEntryElement(update) {
 	const content = typeof update.content === 'string' ? update.content : '';
 	const id = update.id;
 	let el = null;
+	// API content is server-rendered HTML (render_block). Must remain sanitized server-side.
 	if (content && content.trim()) {
 		const wrap = document.createElement('div');
 		wrap.innerHTML = content.trim();
@@ -61,6 +62,7 @@ export function applyUpdateToEntry(container, update) {
 	if (!id || !content.trim()) return;
 	const existing = container.querySelector(`[data-update-id="${escapeSelectorAttr(id)}"]`);
 	if (!existing || !existing.parentNode) return;
+	// Same trust boundary as buildNewEntryElement: content from REST API (server-rendered).
 	const wrap = document.createElement('div');
 	wrap.innerHTML = content.trim();
 	const newEl = wrap.firstElementChild;

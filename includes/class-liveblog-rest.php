@@ -209,6 +209,7 @@ class Liveblog_REST {
 			$content = '';
 			if ( ! empty( $entry['block'] ) ) {
 				$content = (string) render_block( $entry['block'] );
+				$content = wp_kses_post( $content );
 			}
 
 			$updates[] = array(

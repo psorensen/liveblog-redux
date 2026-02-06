@@ -17,10 +17,16 @@ export function escapeHtml(text) {
 	return div.innerHTML;
 }
 
+/**
+ * Escape a value for safe use inside a CSS attribute selector [data-attr="VALUE"].
+ * Prefer CSS.escape when available; otherwise escape backslash and double-quote.
+ */
 export function escapeSelectorAttr(value) {
-	return String(value)
-		.replace(/\\/g, '\\\\')
-		.replace(/"/g, '\\22');
+	const str = String(value);
+	if (typeof CSS !== 'undefined' && CSS.escape) {
+		return CSS.escape(str);
+	}
+	return str.replace(/\\/g, '\\\\').replace(/"/g, '\\22');
 }
 
 export function isAtTop() {
