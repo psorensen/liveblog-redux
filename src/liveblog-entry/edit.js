@@ -6,39 +6,14 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import {
-	useBlockProps,
-	InnerBlocks,
-	InspectorControls,
-	BlockControls,
-} from '@wordpress/block-editor';
-import { PanelBody, ToolbarGroup, ToolbarButton } from '@wordpress/components';
+import { useBlockProps, InnerBlocks, InspectorControls } from '@wordpress/block-editor';
+import { PanelBody } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { useEffect, useRef } from '@wordpress/element';
 import CoAuthorsSelector from './components/coauthors-selector';
+import EntryHeader from './components/EntryHeader';
+import { generateUpdateId } from './utils';
 import './editor.scss';
-import { PostContext, PostTitle } from '@10up/block-components';
-
-
-
-
-
-const generateUpdateId = () => {
-	if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-		return crypto.randomUUID();
-	}
-	return `lb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-};
-
-const formatTime = (ts) => {
-	if (!ts) return '';
-	const d = new Date(ts * 1000);
-	return d.toLocaleTimeString(undefined, {
-		hour: 'numeric',
-		minute: '2-digit',
-		hour12: true,
-	});
-};
 
 export default function Edit({ clientId, attributes, setAttributes }) {
 	const {
@@ -105,25 +80,7 @@ export default function Edit({ clientId, attributes, setAttributes }) {
 				</PanelBody>
 			</InspectorControls>
 			<div {...blockProps}>
-				<div className="liveblog-entry__header">
-					{timestamp > 0 && (
-						<time className="liveblog-entry__time" dateTime={new Date(timestamp * 1000).toISOString()}>
-							{formatTime(timestamp)}
-						</time>
-					)}
-					{authors && authors.length > 0 && (
-						authors.map((author) => (
-							<PostContext postId={author.id} postType={'guest-author'} isEditable={false} >
-								<PostTitle tagName="span" />
-							</PostContext>
-						))
-					)}
-					{modified > 0 && (
-						<span className="liveblog-entry__edited">
-							{__('Edited', 'liveblog')}
-						</span>
-					)}
-				</div>
+				<EntryHeader timestamp={timestamp} authors={authors} modified={modified} />
 				<div className="liveblog-entry__content">
 					<InnerBlocks
 						templateLock={false}

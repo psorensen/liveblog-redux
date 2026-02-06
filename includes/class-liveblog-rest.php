@@ -148,10 +148,7 @@ class Liveblog_REST {
 		if ( false !== $cached ) {
 			$all_entries = $cached;
 		} else {
-			if ( $since > 0 ) {
-				wp_cache_delete( $post_id, 'posts' );
-			}
-			$all_entries = $this->get_entries_from_post( $post_id );
+			$all_entries = $this->get_entries_from_post( $post_id, $since > 0 );
 			if ( is_wp_error( $all_entries ) ) {
 				return $all_entries;
 			}
@@ -176,18 +173,17 @@ class Liveblog_REST {
 			}
 
 			if ( $since > 0 ) {
-				// New = created after client's snapshot (timestamp > since). Do not require modified <= since,
-				// because new entries often have modified set by the editor when the user types before save.
+				// New = created after client's snapshot (timestamp > since).
 				$is_new = $ts > $since || ( 0 === $ts && 0 === $modified );
-				// Modified = existed at since (timestamp <= since) but edited after (modified > since).
-				$is_modified = $include_modified && $ts <= $since && $modified > $since;
+				// Modified = existed at since (timestamp <= since) but edited at or after (modified >= since).
+				$is_modified = $include_modified && $ts <= $since && $modified >= $since;
 				if ( ! $is_new && ! $is_modified ) {
 					continue;
 				}
 			}
 
 			$change_type = 'new';
-			if ( $since > 0 && $ts <= $since && $modified > $since ) {
+			if ( $since > 0 && $ts <= $since && $modified >= $since ) {
 				$change_type = 'modified';
 			}
 			if ( ! $include_modified && 'modified' === $change_type ) {
@@ -200,7 +196,7 @@ class Liveblog_REST {
 				$user        = get_userdata( $author_id );
 				$author_name = $user ? $user->display_name : '';
 			}
-			$coauthors_data      = isset( $attrs['coauthors'] ) && is_array( $attrs['coauthors'] ) ? $attrs['coauthors'] : array();
+			$coauthors_data      = isset( $attrs['coauthors'] ) && is_array( $attrs['coauthors'] ) ? $attrs['coauthors'] : ( isset( $attrs['authors'] ) && is_array( $attrs['authors'] ) ? $attrs['authors'] : array() );
 			$coauthors_formatted = $this->format_coauthors_for_api( $coauthors_data );
 			if ( ! empty( $coauthors_formatted ) && empty( $author_name ) ) {
 				$author_name = $coauthors_formatted[0]['display_name'];
@@ -236,13 +232,15 @@ class Liveblog_REST {
 
 		$has_more = $before > 0 ? ( $count >= $per_page ) : ( count( $all_entries ) > $count );
 
-		return rest_ensure_response(
+		$response = rest_ensure_response(
 			array(
 				'updates'       => $updates,
 				'last_modified' => $last_modified_response,
 				'has_more'      => $has_more,
 			)
 		);
+		$response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
+		return $response;
 	}
 
 	/**
@@ -314,15 +312,32 @@ class Liveblog_REST {
 	/**
 	 * Get parsed entry blocks from post (with block object for rendering).
 	 *
-	 * @param int $post_id Post ID.
+	 * @param int  $post_id      Post ID.
+	 * @param bool $bypass_cache When true, read post_content directly from DB so incremental polls see latest content.
 	 * @return array|\WP_Error Array of { attrs, block } or WP_Error.
 	 */
-	private function get_entries_from_post( $post_id ) {
-		$post = get_post( $post_id );
-		if ( ! $post ) {
-			return new \WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.', 'liveblog' ), array( 'status' => 404 ) );
+	private function get_entries_from_post( $post_id, $bypass_cache = false ) {
+		if ( $bypass_cache ) {
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bypass object cache so polling always sees latest post_content.
+			$post_content = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT post_content FROM {$wpdb->posts} WHERE ID = %d AND post_status IN ( 'publish', 'draft', 'future', 'private' ) LIMIT 1",
+					$post_id
+				)
+			);
+			if ( null === $post_content ) {
+				return new \WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.', 'liveblog' ), array( 'status' => 404 ) );
+			}
+			$blocks = parse_blocks( $post_content );
+		} else {
+			$post = get_post( $post_id );
+			if ( ! $post ) {
+				return new \WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.', 'liveblog' ), array( 'status' => 404 ) );
+			}
+			$blocks = parse_blocks( $post->post_content );
 		}
-		$blocks    = parse_blocks( $post->post_content );
+
 		$container = $this->find_liveblog_container( $blocks );
 		if ( ! $container ) {
 			return array();
