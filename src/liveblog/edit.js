@@ -32,9 +32,12 @@ export default function Edit( { clientId, attributes } ) {
 	);
 
 	// Resolve block hierarchy after insert; used to focus the new entry's heading.
-	const { getBlock } = useSelect( ( select ) => ( {
-		getBlock: select( 'core/block-editor' ).getBlock,
-	} ), [] );
+	const { getBlock } = useSelect(
+		( select ) => ( {
+			getBlock: select( 'core/block-editor' ).getBlock,
+		} ),
+		[]
+	);
 
 	const { insertBlocks, selectBlock } = useDispatch( 'core/block-editor' );
 

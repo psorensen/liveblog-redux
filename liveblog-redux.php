@@ -108,7 +108,7 @@ function print_data_to_footer() {
 		<?php
 			echo wp_json_encode(
 				array(
-					'restUrl'  => rest_url( "liveblog/v1/posts/{$post_id}/updates" ),
+					'restUrl'  => esc_url( rest_url( "liveblog/v1/posts/{$post_id}/updates" ) ),
 					'postId'   => $post_id,
 					'interval' => $polling_interval,
 				)

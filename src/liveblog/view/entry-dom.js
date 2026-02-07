@@ -3,7 +3,7 @@
  */
 
 import { ENTRY_ENTER_ANIMATION_MS } from './constants.js';
-import { formatTimestamp, escapeHtml, escapeSelectorAttr } from './utils.js';
+import { formatTimestamp, escapeSelectorAttr, safeParseHtml } from './utils.js';
 
 /**
  * @param {Object} update API update object (id, content, timestamp, author, coauthors).
@@ -13,11 +13,8 @@ export function buildNewEntryElement( update ) {
 	const content = typeof update.content === 'string' ? update.content : '';
 	const id = update.id;
 	let el = null;
-	// API content is server-rendered HTML (render_block). Must remain sanitized server-side.
 	if ( content && content.trim() ) {
-		const wrap = document.createElement( 'div' );
-		wrap.innerHTML = content.trim();
-		el = wrap.firstElementChild;
+		el = safeParseHtml( content );
 	}
 	if ( ! el && id ) {
 		el = document.createElement( 'div' );
@@ -31,39 +28,49 @@ export function buildNewEntryElement( update ) {
 		if ( hasAuthor ) {
 			const header = document.createElement( 'div' );
 			header.className = 'liveblog-entry__header';
-			const timeHtml = `<time class="liveblog-entry__time">${ formatTimestamp(
-				update.timestamp
-			) }</time> `;
-			let authorsHtml = '';
+			const time = document.createElement( 'time' );
+			time.className = 'liveblog-entry__time';
+			time.textContent = formatTimestamp( update.timestamp );
+			const authorsWrap = document.createElement( 'span' );
+			authorsWrap.className = 'liveblog-entry__authors';
 			if ( update.coauthors && update.coauthors.length > 0 ) {
-				const avatars = update.coauthors
-					.map( ( c ) =>
-						c.avatar_url
-							? `<img src="${ escapeHtml(
-									c.avatar_url
-							  ) }" alt="" width="24" height="24" />`
-							: ''
-					)
-					.filter( Boolean );
-				const names = update.coauthors
-					.map( ( c ) => escapeHtml( c.display_name || '' ) )
+				const avatarsSpan = document.createElement( 'span' );
+				avatarsSpan.className = 'liveblog-entry__author-avatars';
+				for ( const c of update.coauthors ) {
+					const url = c.avatar_url;
+					if (
+						url &&
+						( url.startsWith( 'https://' ) ||
+							url.startsWith( 'http://' ) ||
+							url.startsWith( '/' ) )
+					) {
+						const img = document.createElement( 'img' );
+						img.src = url;
+						img.alt = '';
+						img.width = 24;
+						img.height = 24;
+						avatarsSpan.appendChild( img );
+					}
+				}
+				const namesSpan = document.createElement( 'span' );
+				namesSpan.className = 'liveblog-entry__author-names';
+				namesSpan.textContent = update.coauthors
+					.map( ( c ) => c.display_name || '' )
 					.join( ', ' );
-				authorsHtml = `${
-					avatars.length
-						? `<span class="liveblog-entry__author-avatars">${ avatars.join(
-								''
-						  ) }</span> `
-						: ''
-				}<span class="liveblog-entry__author-names">${ names }</span>`;
+				authorsWrap.appendChild( avatarsSpan );
+				authorsWrap.appendChild( document.createTextNode( ' ' ) );
+				authorsWrap.appendChild( namesSpan );
 			} else {
-				authorsHtml = escapeHtml( update.author );
+				authorsWrap.textContent = update.author || '';
 			}
-			header.innerHTML = `${ timeHtml }<span class="liveblog-entry__authors">${ authorsHtml }</span>`;
+			header.appendChild( time );
+			header.appendChild( document.createTextNode( ' ' ) );
+			header.appendChild( authorsWrap );
 			el.appendChild( header );
 		}
 		const body = document.createElement( 'div' );
 		body.className = 'liveblog-entry__content';
-		body.innerHTML = '<p></p>';
+		body.appendChild( document.createElement( 'p' ) );
 		el.appendChild( body );
 	}
 	return el;
@@ -81,10 +88,7 @@ export function applyUpdateToEntry( container, update ) {
 		`[data-update-id="${ escapeSelectorAttr( id ) }"]`
 	);
 	if ( ! existing || ! existing.parentNode ) return;
-	// Same trust boundary as buildNewEntryElement: content from REST API (server-rendered).
-	const wrap = document.createElement( 'div' );
-	wrap.innerHTML = content.trim();
-	const newEl = wrap.firstElementChild;
+	const newEl = safeParseHtml( content );
 	if ( newEl ) {
 		existing.parentNode.replaceChild( newEl, existing );
 	}

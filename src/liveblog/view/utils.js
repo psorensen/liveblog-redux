@@ -1,7 +1,9 @@
 /**
  * Pure helpers for liveblog frontend (time, escape, scroll, visibility).
+ * DOM updates follow VIP JS: avoid innerHTML; use DOM APIs or DOMPurify for HTML.
  */
 
+import DOMPurify from 'dompurify';
 import { SCROLL_TOP_THRESHOLD } from './constants.js';
 
 export function formatTimestamp( ts ) {
@@ -14,11 +16,18 @@ export function formatTimestamp( ts ) {
 	} );
 }
 
+/**
+ * Escape for safe use in HTML content. Uses character replacement only (no innerHTML).
+ */
 export function escapeHtml( text ) {
 	if ( ! text ) return '';
-	const div = document.createElement( 'div' );
-	div.textContent = text;
-	return div.innerHTML;
+	const s = String( text );
+	return s
+		.replace( /&/g, '&amp;' )
+		.replace( /</g, '&lt;' )
+		.replace( />/g, '&gt;' )
+		.replace( /"/g, '&quot;' )
+		.replace( /'/g, '&#039;' );
 }
 
 /**
@@ -31,6 +40,28 @@ export function escapeSelectorAttr( value ) {
 		return CSS.escape( str );
 	}
 	return str.replace( /\\/g, '\\\\' ).replace( /"/g, '\\22' );
+}
+
+/**
+ * Parse HTML into a single element. Sanitizes to prevent XSS (VIP JS: use DOMPurify for HTML strings).
+ * Prefers native Sanitizer API when available; otherwise uses DOMPurify. No raw innerHTML on untrusted data.
+ *
+ * @param {string} html - HTML string (e.g. server-rendered block content).
+ * @returns {Element|null} First top-level element, or null.
+ */
+export function safeParseHtml( html ) {
+	const str = typeof html === 'string' ? html.trim() : '';
+	if ( ! str ) return null;
+	if (
+		typeof Sanitizer !== 'undefined' &&
+		typeof Sanitizer.prototype.sanitizeFor === 'function'
+	) {
+		const sanitizer = new Sanitizer();
+		const wrapper = sanitizer.sanitizeFor( 'div', str );
+		return wrapper?.firstElementChild ?? null;
+	}
+	const fragment = DOMPurify.sanitize( str, { RETURN_DOM_FRAGMENT: true } );
+	return fragment?.firstElementChild ?? null;
 }
 
 export function isAtTop() {

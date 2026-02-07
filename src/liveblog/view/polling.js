@@ -114,7 +114,7 @@ export function poll( container, config ) {
 							minTs = ts;
 					}
 				} );
-				container.innerHTML = '';
+				container.replaceChildren();
 				container.appendChild( fragment );
 				state.oldestTimestamp = minTs;
 				state.hasMore = !! data.has_more;

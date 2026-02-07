@@ -23,15 +23,22 @@ export function createNotificationBanner() {
 	wrap.className = 'liveblog-notification';
 	wrap.setAttribute( 'aria-live', 'polite' );
 	wrap.setAttribute( 'role', 'status' );
-	wrap.innerHTML =
-		'<span class="liveblog-notification__text"></span> ' +
-		'<button type="button" class="liveblog-notification__show-btn">Show Updates</button> ' +
-		'<button type="button" class="liveblog-notification__dismiss-btn" aria-label="Dismiss">×</button>';
-	const textEl = wrap.querySelector( '.liveblog-notification__text' );
-	const showBtn = wrap.querySelector( '.liveblog-notification__show-btn' );
-	const dismissBtn = wrap.querySelector(
-		'.liveblog-notification__dismiss-btn'
-	);
+	const textEl = document.createElement( 'span' );
+	textEl.className = 'liveblog-notification__text';
+	const showBtn = document.createElement( 'button' );
+	showBtn.type = 'button';
+	showBtn.className = 'liveblog-notification__show-btn';
+	showBtn.textContent = 'Show Updates';
+	const dismissBtn = document.createElement( 'button' );
+	dismissBtn.type = 'button';
+	dismissBtn.className = 'liveblog-notification__dismiss-btn';
+	dismissBtn.setAttribute( 'aria-label', 'Dismiss' );
+	dismissBtn.textContent = '×';
+	wrap.appendChild( textEl );
+	wrap.appendChild( document.createTextNode( ' ' ) );
+	wrap.appendChild( showBtn );
+	wrap.appendChild( document.createTextNode( ' ' ) );
+	wrap.appendChild( dismissBtn );
 
 	const hide = () => {
 		wrap.classList.remove( 'liveblog-notification--visible' );
