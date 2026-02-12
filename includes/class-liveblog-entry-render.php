@@ -77,12 +77,12 @@ class Liveblog_Entry_Render {
 
 		$attr_string = self::build_attribute_string( $wrapper_attrs );
 
-		// render the inner blocks.
+		// Render the inner blocks.
 		$inner_blocks_rendered = array_map(
-			function ( $block ) {
-				return $block['innerHTML'];
+			function ( $inner_block ) {
+				return (string) render_block( $inner_block );
 			},
-			$block['innerBlocks']
+			$block['innerBlocks'] ?? array()
 		);
 
 		return sprintf(
