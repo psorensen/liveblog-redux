@@ -11,7 +11,7 @@ import { __ } from '@wordpress/i18n';
 import { PostContext, PostTitle } from '@10up/block-components';
 import { formatTime } from '../utils';
 
-export default function EntryHeader( { timestamp, authors, modified } ) {
+export default function EntryHeader( { timestamp, authors } ) {
 	return (
 		<div className="liveblog-entry__header">
 			{ timestamp > 0 && (
@@ -34,11 +34,6 @@ export default function EntryHeader( { timestamp, authors, modified } ) {
 						<PostTitle tagName="span" />
 					</PostContext>
 				) ) }
-			{ modified > 0 && (
-				<span className="liveblog-entry__edited">
-					{ __( 'Edited', 'liveblog' ) }
-				</span>
-			) }
 		</div>
 	);
 }
