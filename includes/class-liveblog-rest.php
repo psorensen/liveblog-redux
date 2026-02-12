@@ -9,8 +9,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use CoAuthors_Plus;
-
 /**
  * Class Liveblog_REST
  */
@@ -131,6 +129,8 @@ class Liveblog_REST {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function get_updates( $request ) {
+		global $wp_embed;
+
 		$post_id          = (int) $request['post_id'];
 		$since            = (int) $request['since'];
 		$include_modified = (bool) $request['include_modified'];
@@ -209,9 +209,10 @@ class Liveblog_REST {
 			$content = '';
 			if ( ! empty( $entry['block'] ) ) {
 				$content = (string) render_block( $entry['block'] );
-				$content = wp_kses_post( $content );
 			}
 
+			$content   = $wp_embed->run_shortcode( $content );
+			$content   = $wp_embed->autoembed( $content );
 			$updates[] = array(
 				'id'          => $update_id ? $update_id : 'update-' . $ts,
 				'timestamp'   => $ts,

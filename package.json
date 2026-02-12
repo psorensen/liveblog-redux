@@ -15,8 +15,7 @@
 		"start": "wp-scripts start --webpack-copy-php --blocks-manifest"
 	},
 	"dependencies": {
-		"@10up/block-components": "^1.22.1",
-		"dompurify": "^3.2.2"
+		"@10up/block-components": "^1.22.1"
 	},
 	"devDependencies": {
 		"@wordpress/api-fetch": "*",

@@ -3,7 +3,12 @@
  */
 
 import { ENTRY_ENTER_ANIMATION_MS } from './constants.js';
-import { formatTimestamp, escapeSelectorAttr, safeParseHtml } from './utils.js';
+import {
+	formatTimestamp,
+	escapeSelectorAttr,
+	safeParseHtml,
+	triggerOembedLoad,
+} from './utils.js';
 
 /**
  * @param {Object} update API update object (id, content, timestamp, author, coauthors).
@@ -91,6 +96,7 @@ export function applyUpdateToEntry( container, update ) {
 	const newEl = safeParseHtml( content );
 	if ( newEl ) {
 		existing.parentNode.replaceChild( newEl, existing );
+		triggerOembedLoad( newEl );
 	}
 }
 
@@ -103,6 +109,7 @@ export function insertNewEntry( container, el ) {
 	el.classList.add( 'liveblog-entry--enter' );
 	// Always insert at top (newest first). Do not use load-more button as reference or new entries would appear at bottom.
 	container.insertBefore( el, container.firstChild );
+	triggerOembedLoad( el );
 	setTimeout(
 		() => el.classList.remove( 'liveblog-entry--enter' ),
 		ENTRY_ENTER_ANIMATION_MS

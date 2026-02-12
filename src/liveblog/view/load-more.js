@@ -5,6 +5,7 @@
 import { getConfig } from './constants.js';
 import { LOAD_MORE_PAGE_SIZE } from './constants.js';
 import { buildNewEntryElement } from './entry-dom.js';
+import { triggerOembedLoad } from './utils.js';
 
 /**
  * @param {Element} container Liveblog container element.
@@ -51,6 +52,7 @@ export function getOrCreateLoadMoreButton( container ) {
 					}
 				} );
 				container.insertBefore( fragment, btn );
+				triggerOembedLoad( container );
 				state.oldestTimestamp =
 					minTs > 0 ? minTs : state.oldestTimestamp;
 				state.hasMore = !! data.has_more;

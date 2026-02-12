@@ -10,7 +10,7 @@ import {
 	MAX_BACKOFF,
 	INITIAL_PAGE_SIZE,
 } from './constants.js';
-import { isAtTop, isTabVisible } from './utils.js';
+import { isAtTop, isTabVisible, triggerOembedLoad } from './utils.js';
 import { escapeSelectorAttr } from './utils.js';
 import {
 	buildNewEntryElement,
@@ -116,6 +116,7 @@ export function poll( container, config ) {
 				} );
 				container.replaceChildren();
 				container.appendChild( fragment );
+				triggerOembedLoad( container );
 				state.oldestTimestamp = minTs;
 				state.hasMore = !! data.has_more;
 				if ( state.hasMore ) {
