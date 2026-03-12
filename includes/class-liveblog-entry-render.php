@@ -161,13 +161,20 @@ class Liveblog_Entry_Render {
 			<?php if ( $timestamp ) : ?>
 				<time class="liveblog-entry__time" datetime="<?php echo esc_attr( $timestamp ); ?>"><?php echo esc_html( $formatted_time ); ?></time>
 			<?php endif; ?>
-			<?php if ( ! empty( $authors ) ) : ?>
-				<span class="liveblog-entry__authors">
-					<?php foreach ( $authors as $author ) : ?>
-						<span class="liveblog-entry__author"><?php echo esc_html( $author->display_name ); ?></span>
-					<?php endforeach; ?>
-				</span>
-			<?php endif; ?>
+		<?php if ( ! empty( $authors ) ) : ?>
+			<span class="liveblog-entry__authors">
+				<?php foreach ( $authors as $author ) : ?>
+					<?php $author_link = ! empty( $author->ID ) ? get_author_posts_url( $author->ID, $author->user_nicename ?? '' ) : ''; ?>
+					<span class="liveblog-entry__author">
+						<?php if ( $author_link ) : ?>
+							<a href="<?php echo esc_url( $author_link ); ?>"><?php echo esc_html( $author->display_name ); ?></a>
+						<?php else : ?>
+							<?php echo esc_html( $author->display_name ); ?>
+						<?php endif; ?>
+					</span>
+				<?php endforeach; ?>
+			</span>
+		<?php endif; ?>
 		</div>
 		<?php
 	}

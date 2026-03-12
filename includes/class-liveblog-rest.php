@@ -219,6 +219,7 @@ class Liveblog_REST {
 				'modified'    => $modified,
 				'author'      => $author_name,
 				'author_id'   => $author_id,
+				'author_link' => $author_id ? get_author_posts_url( $author_id ) : '',
 				'coauthors'   => $coauthors_formatted,
 				'content'     => $content,
 				'status'      => isset( $attrs['status'] ) ? $attrs['status'] : 'published',
@@ -374,10 +375,12 @@ class Liveblog_REST {
 			$type       = isset( $c['type'] ) ? $c['type'] : 'wpuser';
 			$cap_id     = is_string( $id ) ? preg_replace( '/^cap-/', '', $id ) : $id;
 			$avatar_url = $this->get_coauthor_avatar_url( $cap_id, $type );
+			$link       = $this->get_coauthor_link( $cap_id );
 			$out[]      = array(
 				'id'           => $id,
 				'display_name' => isset( $c['display_name'] ) ? $c['display_name'] : '',
 				'avatar_url'   => $avatar_url,
+				'link'         => $link,
 				'type'         => $type,
 			);
 		}
@@ -392,5 +395,25 @@ class Liveblog_REST {
 	 */
 	private function get_coauthor_avatar_url( $cap_id ) {
 		return get_avatar_url( $cap_id, array( 'size' => 96 ) );
+	}
+
+	/**
+	 * Get author archive URL for a coauthor.
+	 *
+	 * @param int|string $cap_id Numeric ID (WP user ID or guest author post ID).
+	 * @return string Author archive URL, or empty string if unavailable.
+	 */
+	private function get_coauthor_link( $cap_id ) {
+		if ( ! $cap_id ) {
+			return '';
+		}
+		if ( function_exists( 'get_coauthors' ) ) {
+			global $coauthors_plus;
+			$coauthor = $coauthors_plus->get_coauthor_by( 'id', $cap_id );
+			if ( $coauthor && ! empty( $coauthor->user_nicename ) ) {
+				return get_author_posts_url( $coauthor->ID, $coauthor->user_nicename );
+			}
+		}
+		return get_author_posts_url( (int) $cap_id );
 	}
 }

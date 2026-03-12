@@ -59,12 +59,32 @@ export function buildNewEntryElement( update ) {
 				}
 				const namesSpan = document.createElement( 'span' );
 				namesSpan.className = 'liveblog-entry__author-names';
-				namesSpan.textContent = update.coauthors
-					.map( ( c ) => c.display_name || '' )
-					.join( ', ' );
+				update.coauthors.forEach( ( c, i ) => {
+					if ( i > 0 ) {
+						namesSpan.appendChild(
+							document.createTextNode( ', ' )
+						);
+					}
+					const name = c.display_name || '';
+					if ( c.link ) {
+						const a = document.createElement( 'a' );
+						a.href = c.link;
+						a.textContent = name;
+						namesSpan.appendChild( a );
+					} else {
+						namesSpan.appendChild(
+							document.createTextNode( name )
+						);
+					}
+				} );
 				authorsWrap.appendChild( avatarsSpan );
 				authorsWrap.appendChild( document.createTextNode( ' ' ) );
 				authorsWrap.appendChild( namesSpan );
+			} else if ( update.author_link ) {
+				const a = document.createElement( 'a' );
+				a.href = update.author_link;
+				a.textContent = update.author || '';
+				authorsWrap.appendChild( a );
 			} else {
 				authorsWrap.textContent = update.author || '';
 			}
