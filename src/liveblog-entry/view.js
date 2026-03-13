@@ -61,28 +61,29 @@ function copyToClipboard( text ) {
 
 function initCopyLink() {
 	document.addEventListener( 'click', ( event ) => {
-		const btn = event.target.closest( '.liveblog-entry__copy-link-btn' );
-		if ( ! btn ) {
+		const link = event.target.closest( '.liveblog-entry__copy-link-btn' );
+		if ( ! link ) {
 			return;
 		}
-		const entryId = btn.getAttribute( 'data-entry-id' );
+		event.preventDefault();
+		const entryId = link.getAttribute( 'data-entry-id' );
 		if ( ! entryId ) {
 			return;
 		}
 		const url = window.location.origin + window.location.pathname + ( window.location.search || '' ) + '#' + entryId;
-		const copiedLabel = btn.dataset.copiedLabel || 'Link copied.';
-		const originalContent = btn.innerHTML;
-		const originalAriaLabel = btn.getAttribute( 'aria-label' );
+		const copiedLabel = link.dataset.copiedLabel || 'Link copied.';
+		const originalContent = link.innerHTML;
+		const originalAriaLabel = link.getAttribute( 'aria-label' );
 
 		copyToClipboard( url ).then( () => {
-			btn.classList.add( 'is-copied' );
-			btn.setAttribute( 'aria-label', copiedLabel );
-			btn.innerHTML = '';
-			btn.textContent = copiedLabel;
+			link.classList.add( 'is-copied' );
+			link.setAttribute( 'aria-label', copiedLabel );
+			link.innerHTML = '';
+			link.textContent = copiedLabel;
 			setTimeout( () => {
-				btn.classList.remove( 'is-copied' );
-				btn.setAttribute( 'aria-label', originalAriaLabel );
-				btn.innerHTML = originalContent;
+				link.classList.remove( 'is-copied' );
+				link.setAttribute( 'aria-label', originalAriaLabel );
+				link.innerHTML = originalContent;
 			}, 2000 );
 		} );
 	} );

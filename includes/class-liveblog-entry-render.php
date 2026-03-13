@@ -146,19 +146,22 @@ class Liveblog_Entry_Render {
 	}
 
 	/**
-	 * Markup for the copy-anchor-link button (corner link icon).
+	 * Markup for the copy-anchor-link control (corner link icon).
+	 *
+	 * Renders as an anchor so themes can style it as a link. The href points to the
+	 * entry anchor; JavaScript prevents default and copies the full URL to the clipboard.
 	 *
 	 * @param string $entry_id ID of the entry wrapper (used as anchor).
-	 * @return string HTML for the button.
+	 * @return string HTML for the link.
 	 */
 	private static function copy_link_button_markup( $entry_id ) {
 		$label        = __( 'Copy link to this entry', 'liveblog-redux' );
 		$copied_label = __( 'Link copied.', 'liveblog-redux' );
 		$svg          = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 		return sprintf(
-			'<button type="button" class="liveblog-entry__copy-link-btn" title="%1$s" aria-label="%1$s" data-entry-id="%2$s" data-copied-label="%3$s">%4$s</button>',
-			esc_attr( $label ),
+			'<a href="#%1$s" class="liveblog-entry__copy-link-btn" title="%2$s" aria-label="%2$s" data-entry-id="%1$s" data-copied-label="%3$s">%4$s</a>',
 			esc_attr( $entry_id ),
+			esc_attr( $label ),
 			esc_attr( $copied_label ),
 			$svg
 		);
