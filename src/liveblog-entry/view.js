@@ -37,8 +37,63 @@ function initReadMore() {
 	} );
 }
 
+function copyToClipboard( text ) {
+	if ( navigator.clipboard && typeof navigator.clipboard.writeText === 'function' ) {
+		return navigator.clipboard.writeText( text );
+	}
+	// Fallback for insecure context (e.g. HTTP) or older browsers.
+	const textarea = document.createElement( 'textarea' );
+	textarea.value = text;
+	textarea.setAttribute( 'readonly', '' );
+	textarea.style.position = 'absolute';
+	textarea.style.left = '-9999px';
+	document.body.appendChild( textarea );
+	textarea.select();
+	try {
+		document.execCommand( 'copy' );
+	} catch ( err ) {
+		// Copy may fail in some contexts; still resolve so UI can show feedback.
+	} finally {
+		document.body.removeChild( textarea );
+	}
+	return Promise.resolve();
+}
+
+function initCopyLink() {
+	document.addEventListener( 'click', ( event ) => {
+		const btn = event.target.closest( '.liveblog-entry__copy-link-btn' );
+		if ( ! btn ) {
+			return;
+		}
+		const entryId = btn.getAttribute( 'data-entry-id' );
+		if ( ! entryId ) {
+			return;
+		}
+		const url = window.location.origin + window.location.pathname + ( window.location.search || '' ) + '#' + entryId;
+		const copiedLabel = btn.dataset.copiedLabel || 'Link copied.';
+		const originalContent = btn.innerHTML;
+		const originalAriaLabel = btn.getAttribute( 'aria-label' );
+
+		copyToClipboard( url ).then( () => {
+			btn.classList.add( 'is-copied' );
+			btn.setAttribute( 'aria-label', copiedLabel );
+			btn.innerHTML = '';
+			btn.textContent = copiedLabel;
+			setTimeout( () => {
+				btn.classList.remove( 'is-copied' );
+				btn.setAttribute( 'aria-label', originalAriaLabel );
+				btn.innerHTML = originalContent;
+			}, 2000 );
+		} );
+	} );
+}
+
 if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', initReadMore );
+	document.addEventListener( 'DOMContentLoaded', () => {
+		initReadMore();
+		initCopyLink();
+	} );
 } else {
 	initReadMore();
+	initCopyLink();
 }

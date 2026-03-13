@@ -64,14 +64,16 @@ class Liveblog_Entry_Render {
 			$header = ob_get_clean();
 		}
 
+		$update_id = ! empty( $attrs['updateId'] ) ? $attrs['updateId'] : ( ! empty( $attrs['timestamp'] ) ? 'update-' . $attrs['timestamp'] : '' );
+
 		$wrapper_attrs = array(
 			'class' => 'liveblog-entry',
 		);
-
-		if ( $attrs['updateId'] ) {
-			$wrapper_attrs['data-update-id'] = $attrs['updateId'];
+		if ( $update_id ) {
+			$wrapper_attrs['id']             = $update_id;
+			$wrapper_attrs['data-update-id'] = $update_id;
 		}
-		if ( $attrs['timestamp'] ) {
+		if ( ! empty( $attrs['timestamp'] ) ) {
 			$wrapper_attrs['data-timestamp'] = (string) $attrs['timestamp'];
 		}
 
@@ -88,10 +90,13 @@ class Liveblog_Entry_Render {
 		$content = implode( '', $inner_blocks_rendered );
 		$content = self::wrap_content_with_read_more( $content );
 
+		$copy_link_btn = $update_id ? self::copy_link_button_markup( $update_id ) : '';
+
 		return sprintf(
-			'<div %1$s>%2$s<div class="liveblog-entry__content">%3$s</div></div>',
+			'<div %1$s>%2$s%3$s<div class="liveblog-entry__content">%4$s</div></div>',
 			$attr_string,
 			$header,
+			$copy_link_btn,
 			$content
 		);
 	}
@@ -137,6 +142,25 @@ class Liveblog_Entry_Render {
 			esc_attr( $read_less_label ),
 			esc_html( $read_more_label ),
 			esc_attr( $more_id )
+		);
+	}
+
+	/**
+	 * Markup for the copy-anchor-link button (corner link icon).
+	 *
+	 * @param string $entry_id ID of the entry wrapper (used as anchor).
+	 * @return string HTML for the button.
+	 */
+	private static function copy_link_button_markup( $entry_id ) {
+		$label        = __( 'Copy link to this entry', 'liveblog-redux' );
+		$copied_label = __( 'Link copied.', 'liveblog-redux' );
+		$svg          = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+		return sprintf(
+			'<button type="button" class="liveblog-entry__copy-link-btn" title="%1$s" aria-label="%1$s" data-entry-id="%2$s" data-copied-label="%3$s">%4$s</button>',
+			esc_attr( $label ),
+			esc_attr( $entry_id ),
+			esc_attr( $copied_label ),
+			$svg
 		);
 	}
 
