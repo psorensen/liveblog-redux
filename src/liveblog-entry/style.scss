@@ -55,6 +55,34 @@
 	margin-top: 0;
 }
 
+.liveblog-entry__more {
+	&[hidden] {
+		display: none;
+	}
+}
+
+.liveblog-entry__read-more-btn {
+	display: inline-block;
+	margin-block-start: 0.5em;
+	padding: 0.25em 0.5em;
+	font-size: inherit;
+	font-family: inherit;
+	color: var(--wp-admin-theme-color, currentColor);
+	background: none;
+	border: none;
+	cursor: pointer;
+	text-decoration: underline;
+
+	&:hover {
+		text-decoration: none;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--wp-admin-theme-color);
+		outline-offset: 2px;
+	}
+}
+
 .liveblog-entry-coauthors-list {
 	list-style: none;
 	margin: 0 0 8px 0;

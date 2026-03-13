@@ -5,19 +5,40 @@
  * When this file is defined as the value of the `viewScript` property
  * in `block.json` it will be enqueued on the front end of the site.
  *
- * Example:
- *
- * ```js
- * {
- *   "viewScript": "file:./view.js"
- * }
- * ```
- *
- * If you're not making any changes to this file because your project doesn't need any
- * JavaScript running in the front-end, then you should delete this file and remove
- * the `viewScript` property from `block.json`.
- *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-metadata/#view-script
  */
 
-// Entry block has no front-end script behavior; container view.js handles polling.
+function initReadMore() {
+	document.addEventListener( 'click', ( event ) => {
+		const btn = event.target.closest( '.liveblog-entry__read-more-btn' );
+		if ( ! btn ) {
+			return;
+		}
+		const entry = btn.closest( '.liveblog-entry' );
+		if ( ! entry ) {
+			return;
+		}
+		const moreEl = entry.querySelector( '.liveblog-entry__more' );
+		if ( ! moreEl ) {
+			return;
+		}
+		const expanded = btn.getAttribute( 'aria-expanded' ) === 'true';
+		const readMore = btn.getAttribute( 'data-read-more' ) || 'Read more';
+		const readLess = btn.getAttribute( 'data-read-less' ) || 'Read less';
+		if ( expanded ) {
+			moreEl.hidden = true;
+			btn.setAttribute( 'aria-expanded', 'false' );
+			btn.textContent = readMore;
+		} else {
+			moreEl.hidden = false;
+			btn.setAttribute( 'aria-expanded', 'true' );
+			btn.textContent = readLess;
+		}
+	} );
+}
+
+if ( document.readyState === 'loading' ) {
+	document.addEventListener( 'DOMContentLoaded', initReadMore );
+} else {
+	initReadMore();
+}

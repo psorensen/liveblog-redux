@@ -85,11 +85,58 @@ class Liveblog_Entry_Render {
 			$block['innerBlocks'] ?? array()
 		);
 
+		$content = implode( '', $inner_blocks_rendered );
+		$content = self::wrap_content_with_read_more( $content );
+
 		return sprintf(
 			'<div %1$s>%2$s<div class="liveblog-entry__content">%3$s</div></div>',
 			$attr_string,
 			$header,
-			implode( '', $inner_blocks_rendered )
+			$content
+		);
+	}
+
+	/**
+	 * Wrap content in teaser + optional "read more" section when content extends beyond the first paragraph.
+	 *
+	 * Splits on the first closing </p>; if there is content after it, the first part is shown
+	 * and the rest is placed in a hidden div with a "Read more" button.
+	 *
+	 * @param string $html Rendered inner block HTML.
+	 * @return string HTML with optional read-more structure.
+	 */
+	private static function wrap_content_with_read_more( $html ) {
+		$html = trim( (string) $html );
+		if ( '' === $html ) {
+			return $html;
+		}
+
+		$first_p_close = strpos( $html, '</p>' );
+		if ( false === $first_p_close ) {
+			return $html;
+		}
+
+		$teaser_end = $first_p_close + strlen( '</p>' );
+		$rest       = trim( substr( $html, $teaser_end ) );
+		if ( '' === $rest ) {
+			return $html;
+		}
+
+		$teaser = substr( $html, 0, $teaser_end );
+		$more   = substr( $html, $teaser_end );
+
+		$read_more_label = __( 'Read more', 'liveblog-redux' );
+		$read_less_label = __( 'Read less', 'liveblog-redux' );
+		$more_id         = 'liveblog-entry-more-' . wp_unique_id();
+
+		return sprintf(
+			'<div class="liveblog-entry__teaser">%1$s</div><div id="%6$s" class="liveblog-entry__more" hidden>%2$s</div><button type="button" class="liveblog-entry__read-more-btn" aria-expanded="false" aria-controls="%6$s" data-read-more="%3$s" data-read-less="%4$s">%5$s</button>',
+			$teaser,
+			$more,
+			esc_attr( $read_more_label ),
+			esc_attr( $read_less_label ),
+			esc_html( $read_more_label ),
+			esc_attr( $more_id )
 		);
 	}
 
