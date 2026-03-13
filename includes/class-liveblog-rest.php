@@ -224,7 +224,7 @@ class Liveblog_REST {
 				'content'     => $content,
 				'status'      => isset( $attrs['status'] ) ? $attrs['status'] : 'published',
 				'change_type' => $change_type,
-				'is_pinned'   => ! empty( $attrs['isPinned'] ),
+				'is_pinned'   => ! empty( $attrs['pinned'] ),
 			);
 			++$count;
 		}
@@ -330,8 +330,9 @@ class Liveblog_REST {
 		if ( ! $container ) {
 			return array();
 		}
-		$entries = array();
-		foreach ( $container['innerBlocks'] ?? array() as $block ) {
+		$inner_blocks = Liveblog_Entry_Render::sort_entries_pinned_first( $container['innerBlocks'] ?? array() );
+		$entries      = array();
+		foreach ( $inner_blocks as $block ) {
 			if ( ( $block['blockName'] ?? '' ) !== 'liveblog/entry' ) {
 				continue;
 			}

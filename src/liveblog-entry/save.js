@@ -8,13 +8,14 @@
 import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 
 export default function save( { attributes } ) {
-	const { updateId, timestamp } = attributes || {};
+	const { updateId, timestamp, pinned } = attributes || {};
 	const id = updateId || ( timestamp ? `update-${ timestamp }` : '' );
 
 	const blockProps = useBlockProps.save( {
-		className: [ 'liveblog-entry' ],
+		className: [ 'liveblog-entry', pinned && 'is-pinned' ].filter( Boolean ),
 		...( id && { 'data-update-id': id } ),
 		...( timestamp && { 'data-timestamp': String( timestamp ) } ),
+		...( pinned && { 'data-pinned': 'true' } ),
 	} );
 
 	return (

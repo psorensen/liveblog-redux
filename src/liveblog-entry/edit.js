@@ -10,23 +10,49 @@ import {
 	useBlockProps,
 	InnerBlocks,
 	InspectorControls,
+	BlockControls,
 } from '@wordpress/block-editor';
-import { PanelBody } from '@wordpress/components';
-import { useSelect } from '@wordpress/data';
+import { PanelBody, ToolbarButton } from '@wordpress/components';
+import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect, useRef } from '@wordpress/element';
+import { pin } from '@wordpress/icons';
 import CoAuthorsSelector from './components/coauthors-selector';
 import EntryHeader from './components/EntryHeader';
 import { generateUpdateId } from './utils';
 import './editor.scss';
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
-	const { updateId, timestamp, modified, authors } = attributes;
+	const { updateId, timestamp, modified, authors, pinned } = attributes;
+
+	const { getBlockRootClientId, getBlockIndex } = useSelect(
+		( select ) => ( {
+			getBlockRootClientId: select( 'core/block-editor' ).getBlockRootClientId,
+			getBlockIndex: select( 'core/block-editor' ).getBlockIndex,
+		} ),
+		[]
+	);
+	const { moveBlockToPosition } = useDispatch( 'core/block-editor' );
 
 	const blockProps = useBlockProps( {
-		className: [ 'liveblog-entry', modified > 0 && 'has-modified' ]
+		className: [
+			'liveblog-entry',
+			modified > 0 && 'has-modified',
+			pinned && 'is-pinned',
+		]
 			.filter( Boolean )
 			.join( ' ' ),
 	} );
+
+	const handlePinToggle = () => {
+		const nextPinned = ! pinned;
+		if ( nextPinned ) {
+			const rootClientId = getBlockRootClientId( clientId );
+			if ( rootClientId && getBlockIndex( clientId ) !== 0 ) {
+				moveBlockToPosition( clientId, rootClientId, rootClientId, 0 );
+			}
+		}
+		setAttributes( { pinned: nextPinned } );
+	};
 
 	const currentUser = useSelect(
 		( select ) => select( 'core' )?.getCurrentUser(),
@@ -73,6 +99,14 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 
 	return (
 		<>
+			<BlockControls group="block">
+				<ToolbarButton
+					icon={ pin }
+					label={ pinned ? __( 'Unpin entry', 'liveblog' ) : __( 'Pin to top', 'liveblog' ) }
+					onClick={ handlePinToggle }
+					isPressed={ pinned }
+				/>
+			</BlockControls>
 			<InspectorControls>
 				<PanelBody
 					title={ __( 'Authors', 'liveblog' ) }

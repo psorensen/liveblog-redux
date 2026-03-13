@@ -273,13 +273,15 @@ class Liveblog_Schema {
 
 	/**
 	 * Extract entry blocks from container (attrs + block for rendering).
+	 * Uses pinned-first order so pinned entries appear first.
 	 *
 	 * @param array $container Container block with innerBlocks.
 	 * @return array List of entries with 'attrs' and 'block'.
 	 */
 	private function extract_entries( $container ) {
-		$entries = array();
-		foreach ( $container['innerBlocks'] ?? array() as $block ) {
+		$inner_blocks = Liveblog_Entry_Render::sort_entries_pinned_first( $container['innerBlocks'] ?? array() );
+		$entries      = array();
+		foreach ( $inner_blocks as $block ) {
 			if ( ( $block['blockName'] ?? '' ) !== 'liveblog/entry' ) {
 				continue;
 			}

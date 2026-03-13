@@ -37,6 +37,10 @@
 		"status": {
 			"type": "string",
 			"default": "published"
+		},
+		"pinned": {
+			"type": "boolean",
+			"default": false
 		}
 	}
 }

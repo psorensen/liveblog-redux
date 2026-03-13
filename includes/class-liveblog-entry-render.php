@@ -34,10 +34,62 @@ class Liveblog_Entry_Render {
 	const HEADER_DATA_QUERY_VAR = 'liveblog_entry_header_data';
 
 	/**
-	 * Register the entry block render filter.
+	 * Register the entry and container block render filters.
 	 */
 	public static function register() {
 		add_filter( 'render_block_liveblog/entry', array( __CLASS__, 'render' ), 10, 3 );
+		add_filter( 'render_block_liveblog/container', array( __CLASS__, 'render_container' ), 10, 3 );
+	}
+
+	/**
+	 * Render the container block with inner blocks sorted so pinned entries are first.
+	 *
+	 * @param string   $block_content Block content (replaced with sorted output).
+	 * @param array    $block        Parsed block array (attrs, innerBlocks, etc.).
+	 * @param WP_Block $instance      Block instance.
+	 * @return string HTML output.
+	 */
+	public static function render_container( $block_content, $block, WP_Block $instance ) {
+		$inner_blocks = $block['innerBlocks'] ?? array();
+		if ( empty( $inner_blocks ) ) {
+			return $block_content;
+		}
+
+		$sorted    = self::sort_entries_pinned_first( $inner_blocks );
+		$inner_html = array_map( 'render_block', $sorted );
+		$inner_html = implode( '', $inner_html );
+
+		// Preserve the original wrapper (alignment, layout, className) and only replace inner content.
+		$content = trim( $block_content );
+		if ( preg_match( '#^<div\s[^>]*>#', $content, $m ) ) {
+			return $m[0] . $inner_html . '</div>';
+		}
+
+		return '<div ' . get_block_wrapper_attributes(
+			array_merge( $block['attrs'] ?? array(), array( 'class' => 'liveblog-container wp-block-liveblog-container' ) )
+		) . '>' . $inner_html . '</div>';
+	}
+
+	/**
+	 * Sort an array of blocks so liveblog/entry blocks with pinned=true come first.
+	 * Preserves relative order within pinned and non-pinned groups.
+	 *
+	 * @param array $blocks Array of parsed block arrays.
+	 * @return array Sorted blocks (pinned entries first).
+	 */
+	public static function sort_entries_pinned_first( array $blocks ) {
+		$pinned = array();
+		$rest   = array();
+		foreach ( $blocks as $b ) {
+			$name = $b['blockName'] ?? '';
+			$is_pinned = ( $name === 'liveblog/entry' ) && ! empty( $b['attrs']['pinned'] );
+			if ( $is_pinned ) {
+				$pinned[] = $b;
+			} else {
+				$rest[] = $b;
+			}
+		}
+		return array_merge( $pinned, $rest );
 	}
 
 	/**
@@ -66,8 +118,10 @@ class Liveblog_Entry_Render {
 
 		$update_id = ! empty( $attrs['updateId'] ) ? $attrs['updateId'] : ( ! empty( $attrs['timestamp'] ) ? 'update-' . $attrs['timestamp'] : '' );
 
+		$pinned = ! empty( $attrs['pinned'] );
+
 		$wrapper_attrs = array(
-			'class' => 'liveblog-entry',
+			'class' => 'liveblog-entry' . ( $pinned ? ' is-pinned' : '' ),
 		);
 		if ( $update_id ) {
 			$wrapper_attrs['id']             = $update_id;
@@ -75,6 +129,9 @@ class Liveblog_Entry_Render {
 		}
 		if ( ! empty( $attrs['timestamp'] ) ) {
 			$wrapper_attrs['data-timestamp'] = (string) $attrs['timestamp'];
+		}
+		if ( $pinned ) {
+			$wrapper_attrs['data-pinned'] = 'true';
 		}
 
 		$attr_string = self::build_attribute_string( $wrapper_attrs );
