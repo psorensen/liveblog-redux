@@ -125,6 +125,7 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 					timestamp={ timestamp }
 					authors={ authors }
 					modified={ modified }
+					pinned={ pinned }
 				/>
 				<div className="liveblog-entry__content">
 					<InnerBlocks templateLock={ false } />

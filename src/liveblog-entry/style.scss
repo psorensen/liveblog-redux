@@ -54,13 +54,30 @@
 	}
 }
 
-.liveblog-entry__header {
+.liveblog-entry__header-row {
 	display: flex;
 	gap: 12px;
 	align-items: center;
 	margin-bottom: 12px;
+}
+
+.liveblog-entry__header {
+	display: flex;
+	gap: 12px;
+	align-items: center;
 	font-size: 14px;
 	color: #666;
+}
+
+.liveblog-entry__pinned-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--wp-admin-theme-color, currentColor);
+	flex-shrink: 0;
+
+	svg {
+		display: block;
+	}
 }
 
 .liveblog-entry__time {

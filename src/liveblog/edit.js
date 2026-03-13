@@ -42,7 +42,21 @@ export default function Edit( { clientId, attributes } ) {
 	const { insertBlocks, selectBlock } = useDispatch( 'core/block-editor' );
 
 	const addEntryAtTop = () => {
-		// 1. Create and insert a new liveblog/entry at the top (heading + paragraph).
+		const container = getBlock( clientId );
+		const innerBlocks = container?.innerBlocks ?? [];
+		// Insert after any leading pinned entries so new entries appear below the pin.
+		let insertIndex = 0;
+		for ( let i = 0; i < innerBlocks.length; i++ ) {
+			const isPinned =
+				innerBlocks[ i ].name === 'liveblog/entry' &&
+				innerBlocks[ i ].attributes?.pinned;
+			if ( ! isPinned ) {
+				insertIndex = i;
+				break;
+			}
+			insertIndex = i + 1;
+		}
+
 		const entryBlock = createBlock( 'liveblog/entry', {}, [
 			createBlock( 'core/heading', {
 				level: 2,
@@ -52,12 +66,11 @@ export default function Edit( { clientId, attributes } ) {
 				placeholder: __( 'Write update…', 'liveblog' ),
 			} ),
 		] );
-		insertBlocks( [ entryBlock ], 0, clientId );
+		insertBlocks( [ entryBlock ], insertIndex, clientId );
 
-		// 2. Focus the heading inside the new entry so the user can type the title.
-		// Store updates synchronously, so the new entry is already at index 0.
-		const container = getBlock( clientId );
-		const entryClientId = container?.innerBlocks?.[ 0 ]?.clientId;
+		// Focus the heading inside the new entry so the user can type the title.
+		const containerAfter = getBlock( clientId );
+		const entryClientId = containerAfter?.innerBlocks?.[ insertIndex ]?.clientId;
 		if ( entryClientId ) {
 			const entry = getBlock( entryClientId );
 			const headingClientId = entry?.innerBlocks?.[ 0 ]?.clientId;

@@ -148,13 +148,30 @@ class Liveblog_Entry_Render {
 		$content = self::wrap_content_with_read_more( $content );
 
 		$copy_link_btn = $update_id ? self::copy_link_button_markup( $update_id ) : '';
+		$pin_icon      = $pinned ? self::pin_icon_markup() : '';
+		$header_row    = '<div class="liveblog-entry__header-row">' . $pin_icon . $header . '</div>';
 
 		return sprintf(
 			'<div %1$s>%2$s%3$s<div class="liveblog-entry__content">%4$s</div></div>',
 			$attr_string,
-			$header,
+			$header_row,
 			$copy_link_btn,
 			$content
+		);
+	}
+
+	/**
+	 * Markup for the pinned indicator icon (displayed in entry content when pinned).
+	 *
+	 * @return string HTML for the pin icon.
+	 */
+	private static function pin_icon_markup() {
+		$title = __( 'Pinned to top', 'liveblog-redux' );
+		$svg   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>';
+		return sprintf(
+			'<span class="liveblog-entry__pinned-icon" title="%1$s">%2$s</span>',
+			esc_attr( $title ),
+			$svg
 		);
 	}
 
