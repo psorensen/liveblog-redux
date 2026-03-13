@@ -121,14 +121,48 @@ export function applyUpdateToEntry( container, update ) {
 }
 
 /**
+ * Find the node before which a new (non-pinned) entry should be inserted so that
+ * it appears after any leading pinned entries.
+ *
+ * @param {Element} container Liveblog container element.
+ * @returns {Element|null} The node to pass as second arg to insertBefore (null = append).
+ */
+export function getInsertBeforeNode( container ) {
+	const entries = container.querySelectorAll( '.liveblog-entry' );
+	let lastPinned = null;
+	for ( const entry of entries ) {
+		const pinned =
+			entry.getAttribute( 'data-pinned' ) === 'true' ||
+			entry.classList.contains( 'is-pinned' );
+		if ( pinned ) {
+			lastPinned = entry;
+		} else {
+			break;
+		}
+	}
+	if ( lastPinned && lastPinned.nextElementSibling ) {
+		return lastPinned.nextElementSibling;
+	}
+	if ( lastPinned ) {
+		return null;
+	}
+	return container.firstChild;
+}
+
+/**
  * @param {Element} container Liveblog container element.
  * @param {HTMLElement} el New entry element to insert.
+ * @param {Element|null} [insertBefore] Optional node before which to insert (e.g. when flushing multiple so order is preserved).
  */
-export function insertNewEntry( container, el ) {
+export function insertNewEntry( container, el, insertBefore ) {
 	if ( ! el ) return;
 	el.classList.add( 'liveblog-entry--enter' );
-	// Always insert at top (newest first). Do not use load-more button as reference or new entries would appear at bottom.
-	container.insertBefore( el, container.firstChild );
+	const before = insertBefore !== undefined ? insertBefore : getInsertBeforeNode( container );
+	if ( before ) {
+		container.insertBefore( el, before );
+	} else {
+		container.appendChild( el );
+	}
 	triggerOembedLoad( el );
 	setTimeout(
 		() => el.classList.remove( 'liveblog-entry--enter' ),

@@ -3,7 +3,11 @@
  */
 
 import { BANNER_AUTO_DISMISS_MS } from './constants.js';
-import { buildNewEntryElement, insertNewEntry } from './entry-dom.js';
+import {
+	buildNewEntryElement,
+	insertNewEntry,
+	getInsertBeforeNode,
+} from './entry-dom.js';
 import {
 	getGlobalQueuedNewCount,
 	getUnreadCount,
@@ -70,9 +74,13 @@ export function createNotificationBanner() {
 					state.queuedNew.length === 0
 				)
 					return;
+				let insertBefore = getInsertBeforeNode( container );
 				state.queuedNew.forEach( ( update ) => {
 					const el = buildNewEntryElement( update );
-					if ( el ) insertNewEntry( container, el );
+					if ( el ) {
+						insertNewEntry( container, el, insertBefore );
+						insertBefore = el.nextElementSibling;
+					}
 				} );
 				state.queuedNew = [];
 			} );
