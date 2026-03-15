@@ -27,6 +27,10 @@ export function buildNewEntryElement( update ) {
 		el.setAttribute( 'data-update-id', id );
 		if ( update.timestamp )
 			el.setAttribute( 'data-timestamp', update.timestamp );
+		if ( update.is_pinned ) {
+			el.setAttribute( 'data-pinned', 'true' );
+			el.classList.add( 'is-pinned' );
+		}
 		const hasAuthor =
 			update.author ||
 			( update.coauthors && update.coauthors.length > 0 );
@@ -103,7 +107,8 @@ export function buildNewEntryElement( update ) {
 
 /**
  * @param {Element} container Liveblog container element.
- * @param {Object} update API update object with id and content.
+ * @param {Object} update API update object with id, content, is_pinned.
+ * @returns {Element|undefined} The updated entry element, or undefined.
  */
 export function applyUpdateToEntry( container, update ) {
 	const content = typeof update.content === 'string' ? update.content : '';
@@ -114,10 +119,32 @@ export function applyUpdateToEntry( container, update ) {
 	);
 	if ( ! existing || ! existing.parentNode ) return;
 	const newEl = safeParseHtml( content );
-	if ( newEl ) {
-		existing.parentNode.replaceChild( newEl, existing );
-		triggerOembedLoad( newEl );
+	if ( ! newEl ) return;
+	// Ensure pinned state from API is reflected (parsed HTML may already have it).
+	const isPinned = !! update.is_pinned;
+	if ( isPinned ) {
+		newEl.setAttribute( 'data-pinned', 'true' );
+		newEl.classList.add( 'is-pinned' );
+	} else {
+		newEl.removeAttribute( 'data-pinned' );
+		newEl.classList.remove( 'is-pinned' );
 	}
+	existing.parentNode.replaceChild( newEl, existing );
+	triggerOembedLoad( newEl );
+	return newEl;
+}
+
+/**
+ * Check if an entry element is pinned.
+ *
+ * @param {Element} entry Entry element.
+ * @returns {boolean}
+ */
+function isEntryPinned( entry ) {
+	return (
+		entry.getAttribute( 'data-pinned' ) === 'true' ||
+		entry.classList.contains( 'is-pinned' )
+	);
 }
 
 /**
@@ -125,20 +152,16 @@ export function applyUpdateToEntry( container, update ) {
  * it appears after any leading pinned entries.
  *
  * @param {Element} container Liveblog container element.
+ * @param {Element} [excludeEntry] Optional entry to exclude when computing position (e.g. the one being moved).
  * @returns {Element|null} The node to pass as second arg to insertBefore (null = append).
  */
-export function getInsertBeforeNode( container ) {
+export function getInsertBeforeNode( container, excludeEntry ) {
 	const entries = container.querySelectorAll( '.liveblog-entry' );
 	let lastPinned = null;
 	for ( const entry of entries ) {
-		const pinned =
-			entry.getAttribute( 'data-pinned' ) === 'true' ||
-			entry.classList.contains( 'is-pinned' );
-		if ( pinned ) {
-			lastPinned = entry;
-		} else {
-			break;
-		}
+		if ( entry === excludeEntry ) continue;
+		if ( isEntryPinned( entry ) ) lastPinned = entry;
+		else break;
 	}
 	if ( lastPinned && lastPinned.nextElementSibling ) {
 		return lastPinned.nextElementSibling;
@@ -147,6 +170,24 @@ export function getInsertBeforeNode( container ) {
 		return null;
 	}
 	return container.firstChild;
+}
+
+/**
+ * Move an entry to the correct position: pinned entries after other pinned, non-pinned after the pinned block.
+ * Call after applying an update so open frontend sessions reorder when an entry is pinned/unpinned.
+ *
+ * @param {Element} container Liveblog container element.
+ * @param {Element} entryEl The entry element to reposition.
+ */
+export function moveEntryToCorrectPosition( container, entryEl ) {
+	if ( ! entryEl || ! entryEl.parentNode ) return;
+	const before = getInsertBeforeNode( container, entryEl );
+	if ( before === entryEl ) return;
+	if ( before ) {
+		container.insertBefore( entryEl, before );
+	} else {
+		container.appendChild( entryEl );
+	}
 }
 
 /**

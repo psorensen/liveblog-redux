@@ -16,6 +16,7 @@ import {
 	buildNewEntryElement,
 	applyUpdateToEntry,
 	insertNewEntry,
+	moveEntryToCorrectPosition,
 } from './entry-dom.js';
 import { getOrCreateLoadMoreButton } from './load-more.js';
 import { updateBanner } from './notification-banner.js';
@@ -32,7 +33,10 @@ function processUpdates( container, updates ) {
 	updates.forEach( ( update ) => {
 		const id = update.id;
 		if ( update.change_type === 'modified' && id ) {
-			applyUpdateToEntry( container, update );
+			const updatedEl = applyUpdateToEntry( container, update );
+			if ( updatedEl ) {
+				moveEntryToCorrectPosition( container, updatedEl );
+			}
 			return;
 		}
 		if ( update.change_type === 'new' ) {
