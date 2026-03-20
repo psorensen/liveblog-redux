@@ -21,19 +21,31 @@ import Edit from './edit';
 import save from './save';
 import metadata from './block.json';
 
-/**
- * Every block starts by registering a new block type definition.
- *
- * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-registration/
- */
-registerBlockType( metadata.name, {
-	/**
-	 * @see ./edit.js
-	 */
-	edit: Edit,
+import { useBlockProps as useSaveBlockProps, InnerBlocks } from '@wordpress/block-editor';
 
-	/**
-	 * @see ./save.js
-	 */
+const deprecated = [
+	{
+		attributes: {
+			allowedBlocks: {
+				type: 'array',
+				default: [ 'liveblog/entry' ],
+			},
+		},
+		save() {
+			const blockProps = useSaveBlockProps.save( {
+				className: 'liveblog-container',
+			} );
+			return (
+				<div { ...blockProps }>
+					<InnerBlocks.Content />
+				</div>
+			);
+		},
+	},
+];
+
+registerBlockType( metadata.name, {
+	edit: Edit,
 	save,
+	deprecated,
 } );

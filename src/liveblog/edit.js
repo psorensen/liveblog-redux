@@ -7,93 +7,142 @@
 
 import { __ } from '@wordpress/i18n';
 import { createBlock } from '@wordpress/blocks';
-import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	InnerBlocks,
+	InspectorControls,
+} from '@wordpress/block-editor';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { __experimentalHStack as HStack } from '@wordpress/components';
+import {
+	__experimentalHStack as HStack,
+	PanelBody,
+	SelectControl,
+	ToggleControl,
+} from '@wordpress/components';
 import AddEntryButton from './components/AddEntryButton';
 import Badge from './components/Badge';
 import './editor.scss';
 
-const ALLOWED_BLOCKS = [ 'liveblog/entry' ];
+const ALLOWED_BLOCKS = ['liveblog/entry'];
 
-export default function Edit( { clientId, attributes } ) {
-	const { allowedBlocks = ALLOWED_BLOCKS } = attributes;
-	const blockProps = useBlockProps( {
+const STATUS_OPTIONS = [
+	{ label: __('Upcoming', 'liveblog-redux'), value: 'upcoming' },
+	{ label: __('Live', 'liveblog-redux'), value: 'live' },
+	{ label: __('Ended', 'liveblog-redux'), value: 'ended' },
+];
+
+export default function Edit({ clientId, attributes, setAttributes }) {
+	const {
+		allowedBlocks = ALLOWED_BLOCKS,
+		status = 'live',
+		showStatus = true,
+	} = attributes;
+	const blockProps = useBlockProps({
 		className: 'liveblog-container',
-	} );
+		'data-status': status,
+	});
 
 	const innerBlockCount = useSelect(
-		( select ) => {
-			const { getBlock, getBlockCount } = select( 'core/block-editor' );
-			const block = getBlock( clientId );
-			return block ? getBlockCount( clientId ) : 0;
+		(select) => {
+			const { getBlock, getBlockCount } = select('core/block-editor');
+			const block = getBlock(clientId);
+			return block ? getBlockCount(clientId) : 0;
 		},
-		[ clientId ]
+		[clientId]
 	);
 
 	// Resolve block hierarchy after insert; used to focus the new entry's heading.
 	const { getBlock } = useSelect(
-		( select ) => ( {
-			getBlock: select( 'core/block-editor' ).getBlock,
-		} ),
+		(select) => ({
+			getBlock: select('core/block-editor').getBlock,
+		}),
 		[]
 	);
 
-	const { insertBlocks, selectBlock } = useDispatch( 'core/block-editor' );
+	const { insertBlocks, selectBlock } = useDispatch('core/block-editor');
 
 	const addEntryAtTop = () => {
-		const container = getBlock( clientId );
+		const container = getBlock(clientId);
 		const innerBlocks = container?.innerBlocks ?? [];
 		// Insert after any leading pinned entries so new entries appear below the pin.
 		let insertIndex = 0;
-		for ( let i = 0; i < innerBlocks.length; i++ ) {
+		for (let i = 0; i < innerBlocks.length; i++) {
 			const isPinned =
-				innerBlocks[ i ].name === 'liveblog/entry' &&
-				innerBlocks[ i ].attributes?.pinned;
-			if ( ! isPinned ) {
+				innerBlocks[i].name === 'liveblog/entry' &&
+				innerBlocks[i].attributes?.pinned;
+			if (!isPinned) {
 				insertIndex = i;
 				break;
 			}
 			insertIndex = i + 1;
 		}
 
-		const entryBlock = createBlock( 'liveblog/entry', {}, [
-			createBlock( 'core/heading', {
+		const entryBlock = createBlock('liveblog/entry', {}, [
+			createBlock('core/heading', {
 				level: 2,
-				placeholder: __( 'Entry Title', 'liveblog' ),
-			} ),
-			createBlock( 'core/paragraph', {
-				placeholder: __( 'Write update…', 'liveblog' ),
-			} ),
-		] );
-		insertBlocks( [ entryBlock ], insertIndex, clientId );
+				placeholder: __('Entry Title', 'liveblog'),
+			}),
+			createBlock('core/paragraph', {
+				placeholder: __('Write update…', 'liveblog'),
+			}),
+		]);
+		insertBlocks([entryBlock], insertIndex, clientId);
 
 		// Focus the heading inside the new entry so the user can type the title.
-		const containerAfter = getBlock( clientId );
-		const entryClientId = containerAfter?.innerBlocks?.[ insertIndex ]?.clientId;
-		if ( entryClientId ) {
-			const entry = getBlock( entryClientId );
-			const headingClientId = entry?.innerBlocks?.[ 0 ]?.clientId;
-			if ( headingClientId ) {
-				selectBlock( headingClientId );
+		const containerAfter = getBlock(clientId);
+		const entryClientId = containerAfter?.innerBlocks?.[insertIndex]?.clientId;
+		if (entryClientId) {
+			const entry = getBlock(entryClientId);
+			const headingClientId = entry?.innerBlocks?.[0]?.clientId;
+			if (headingClientId) {
+				selectBlock(headingClientId);
 			}
 		}
 	};
 
 	return (
-		<div { ...blockProps }>
-			<HStack justify="space-between" style={ { marginBottom: '1em' } }>
-				<AddEntryButton onClick={ addEntryAtTop } />
-				<Badge
-					title={ __( 'Liveblog', 'liveblog' ) }
-					count={ innerBlockCount }
+		<>
+			<InspectorControls>
+				<PanelBody
+					title={__('Liveblog Settings', 'liveblog-redux')}
+				>
+					<ToggleControl
+						label={__('Show status', 'liveblog-redux')}
+						checked={showStatus}
+						onChange={(value) => {
+							console.log('value', value);
+							setAttributes({ showStatus: value })
+						}
+						}
+					/>
+					<SelectControl
+						label={__('Status', 'liveblog-redux')}
+						value={status}
+						options={STATUS_OPTIONS}
+						onChange={(value) =>
+							setAttributes({ status: value })
+						}
+						disabled={!showStatus}
+					/>
+				</PanelBody>
+			</InspectorControls>
+			<div {...blockProps}>
+				<HStack
+					justify="space-between"
+					style={{ marginBottom: '1em' }}
+				>
+					<AddEntryButton onClick={addEntryAtTop} />
+					<Badge
+						title={__('Liveblog', 'liveblog')}
+						count={innerBlockCount}
+					/>
+				</HStack>
+				<InnerBlocks
+					allowedBlocks={allowedBlocks}
+					templateLock={false}
+					renderAppender={false}
 				/>
-			</HStack>
-			<InnerBlocks
-				allowedBlocks={ allowedBlocks }
-				templateLock={ false }
-				renderAppender={ false }
-			/>
-		</div>
+			</div>
+		</>
 	);
 }

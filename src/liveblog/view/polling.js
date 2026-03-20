@@ -118,7 +118,15 @@ export function poll( container, config ) {
 							minTs = ts;
 					}
 				} );
+				// Preserve server-rendered status badge (Live / Upcoming / Ended); replaceChildren would remove it.
+				const statusBadge = container.querySelector( '.liveblog-status' );
+				const statusClone = statusBadge
+					? statusBadge.cloneNode( true )
+					: null;
 				container.replaceChildren();
+				if ( statusClone ) {
+					container.appendChild( statusClone );
+				}
 				container.appendChild( fragment );
 				triggerOembedLoad( container );
 				state.oldestTimestamp = minTs;

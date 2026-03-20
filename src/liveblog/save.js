@@ -8,8 +8,11 @@
 import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 
 export default function save( { attributes } ) {
+	const { status = 'live', showStatus = true } = attributes;
 	const blockProps = useBlockProps.save( {
 		className: 'liveblog-container',
+		'data-status': status,
+		...( showStatus === false && { 'data-show-status': 'false' } ),
 	} );
 
 	return (

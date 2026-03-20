@@ -60,6 +60,56 @@
 	}
 }
 
+/* Status badge */
+.liveblog-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 12px;
+	border-radius: 9999px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.4;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	margin-block-end: 1rem;
+}
+
+.liveblog-status--live {
+	background-color: #dcfce7;
+	color: #166534;
+}
+
+.liveblog-status__dot {
+	display: block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: #16a34a;
+	animation: liveblog-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes liveblog-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0.4;
+	}
+}
+
+.liveblog-status--upcoming {
+	background-color: #e0e7ff;
+	color: #3730a3;
+}
+
+.liveblog-status--ended {
+	background-color: #f3f4f6;
+	color: #4b5563;
+}
+
 /* New entry insert animation (used by view.js) */
 .liveblog-entry--enter {
 	animation: liveblog-slide-in-from-top 0.3s ease-out;

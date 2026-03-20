@@ -20,6 +20,15 @@
 		"allowedBlocks": {
 			"type": "array",
 			"default": [ "liveblog/entry" ]
+		},
+		"status": {
+			"type": "string",
+			"default": "live",
+			"enum": [ "upcoming", "live", "ended" ]
+		},
+		"showStatus": {
+			"type": "boolean",
+			"default": true
 		}
 	}
 }

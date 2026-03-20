@@ -55,19 +55,60 @@ class Liveblog_Entry_Render {
 			return $block_content;
 		}
 
-		$sorted    = self::sort_entries_pinned_first( $inner_blocks );
+		$sorted     = self::sort_entries_pinned_first( $inner_blocks );
 		$inner_html = array_map( 'render_block', $sorted );
 		$inner_html = implode( '', $inner_html );
+
+		$status       = ! empty( $block['attrs']['status'] ) ? $block['attrs']['status'] : 'live';
+		$valid        = array( 'upcoming', 'live', 'ended' );
+		$status       = in_array( $status, $valid, true ) ? $status : 'live';
+		$show_status  = ! isset( $block['attrs']['showStatus'] ) || ! empty( $block['attrs']['showStatus'] );
+		$status_badge = $show_status ? self::status_badge_markup( $status ) : '';
 
 		// Preserve the original wrapper (alignment, layout, className) and only replace inner content.
 		$content = trim( $block_content );
 		if ( preg_match( '#^<div\s[^>]*>#', $content, $m ) ) {
-			return $m[0] . $inner_html . '</div>';
+			return $m[0] . $status_badge . $inner_html . '</div>';
 		}
 
+		$status_class = 'is-' . $status;
+
 		return '<div ' . get_block_wrapper_attributes(
-			array_merge( $block['attrs'] ?? array(), array( 'class' => 'liveblog-container wp-block-liveblog-container' ) )
-		) . '>' . $inner_html . '</div>';
+			array_merge(
+				$block['attrs'] ?? array(),
+				array(
+					'class'       => 'liveblog-container wp-block-liveblog-container ' . $status_class,
+					'data-status' => $status,
+				)
+			)
+		) . '>' . $status_badge . $inner_html . '</div>';
+	}
+
+	/**
+	 * Render the status badge displayed at the top of the liveblog container.
+	 *
+	 * @param string $status One of 'upcoming', 'live', or 'ended'.
+	 * @return string HTML for the status badge.
+	 */
+	private static function status_badge_markup( $status ) {
+		$labels = array(
+			'upcoming' => __( 'Upcoming', 'liveblog-redux' ),
+			'live'     => __( 'Live', 'liveblog-redux' ),
+			'ended'    => __( 'Ended', 'liveblog-redux' ),
+		);
+
+		$label = $labels[ $status ] ?? $labels['live'];
+
+		$dot = 'live' === $status
+			? '<span class="liveblog-status__dot" aria-hidden="true"></span>'
+			: '';
+
+		return sprintf(
+			'<div class="liveblog-status liveblog-status--%1$s">%2$s<span class="liveblog-status__label">%3$s</span></div>',
+			esc_attr( $status ),
+			$dot,
+			esc_html( $label )
+		);
 	}
 
 	/**
