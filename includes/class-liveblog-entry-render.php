@@ -223,6 +223,29 @@ class Liveblog_Entry_Render {
 	}
 
 	/**
+	 * Whether the HTML after the teaser has something worth revealing (not only empty markup).
+	 *
+	 * @param string $html Fragment after the split point.
+	 * @return bool True if there is text and/or meaningful non-text content (media, embeds, etc.).
+	 */
+	private static function read_more_section_has_content( $html ) {
+		$html = trim( (string) $html );
+		if ( '' === $html ) {
+			return false;
+		}
+
+		$text = trim( wp_strip_all_tags( $html, true ) );
+		if ( '' !== $text ) {
+			return true;
+		}
+
+		return (bool) preg_match(
+			'/<(?:img|figure|picture|video|audio|iframe|embed|object|svg|blockquote|ul|ol|table|pre|code|hr)\b/i',
+			$html
+		);
+	}
+
+	/**
 	 * Wrap content in teaser + optional "read more" section when content extends beyond N paragraphs.
 	 *
 	 * Splits after the Nth closing </p>; if there is content after it, that prefix is the teaser
@@ -252,7 +275,7 @@ class Liveblog_Entry_Render {
 		}
 
 		$rest = trim( substr( $html, $teaser_end ) );
-		if ( '' === $rest ) {
+		if ( '' === $rest || ! self::read_more_section_has_content( $rest ) ) {
 			return $html;
 		}
 
