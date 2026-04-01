@@ -186,7 +186,13 @@ class Liveblog_Entry_Render {
 		);
 
 		$content = implode( '', $inner_blocks_rendered );
-		$content = self::wrap_content_with_read_more( $content );
+		$read_more_paragraphs = (int) apply_filters(
+			'liveblog_entry_read_more_paragraph_count',
+			1,
+			$attrs,
+			$block
+		);
+		$content              = self::wrap_content_with_read_more( $content, $read_more_paragraphs );
 
 		$copy_link_btn = $update_id ? self::copy_link_button_markup( $update_id ) : '';
 		$pin_icon      = $pinned ? self::pin_icon_markup() : '';
@@ -217,27 +223,35 @@ class Liveblog_Entry_Render {
 	}
 
 	/**
-	 * Wrap content in teaser + optional "read more" section when content extends beyond the first paragraph.
+	 * Wrap content in teaser + optional "read more" section when content extends beyond N paragraphs.
 	 *
-	 * Splits on the first closing </p>; if there is content after it, the first part is shown
+	 * Splits after the Nth closing </p>; if there is content after it, that prefix is the teaser
 	 * and the rest is placed in a hidden div with a "Read more" button.
 	 *
-	 * @param string $html Rendered inner block HTML.
+	 * @param string $html             Rendered inner block HTML.
+	 * @param int    $paragraph_count  Number of complete paragraphs to show before the button (minimum 1).
 	 * @return string HTML with optional read-more structure.
 	 */
-	private static function wrap_content_with_read_more( $html ) {
+	private static function wrap_content_with_read_more( $html, $paragraph_count = 1 ) {
 		$html = trim( (string) $html );
 		if ( '' === $html ) {
 			return $html;
 		}
 
-		$first_p_close = strpos( $html, '</p>' );
-		if ( false === $first_p_close ) {
-			return $html;
+		$paragraph_count = max( 1, (int) $paragraph_count );
+
+		$offset    = 0;
+		$teaser_end = null;
+		for ( $i = 0; $i < $paragraph_count; $i++ ) {
+			$p_close = strpos( $html, '</p>', $offset );
+			if ( false === $p_close ) {
+				return $html;
+			}
+			$teaser_end = $p_close + strlen( '</p>' );
+			$offset     = $teaser_end;
 		}
 
-		$teaser_end = $first_p_close + strlen( '</p>' );
-		$rest       = trim( substr( $html, $teaser_end ) );
+		$rest = trim( substr( $html, $teaser_end ) );
 		if ( '' === $rest ) {
 			return $html;
 		}
