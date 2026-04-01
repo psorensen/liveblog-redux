@@ -83,7 +83,6 @@ export default function CoAuthorsSelector( {
 	const resolvedNamesRef = useRef( {} );
 	resolvedNamesRef.current = resolvedNames;
 	const inlineRootRef = useRef( null );
-	const valueWhenOpenedRef = useRef( '' );
 
 	useEffect( () => {
 		if ( ! capAvailable || ! isInline ) {
@@ -159,12 +158,7 @@ export default function CoAuthorsSelector( {
 		);
 
 	const toggleInlinePanel = () => {
-		setIsEditing( ( wasOpen ) => {
-			if ( ! wasOpen ) {
-				valueWhenOpenedRef.current = authorIdsKey( value );
-			}
-			return ! wasOpen;
-		} );
+		setIsEditing( ( wasOpen ) => ! wasOpen );
 	};
 
 	const MAX_AUTHORS = 5;
@@ -189,13 +183,6 @@ export default function CoAuthorsSelector( {
 			return;
 		}
 		onChange( next );
-		if (
-			isInline &&
-			capAvailable &&
-			authorIdsKey( next ) !== valueWhenOpenedRef.current
-		) {
-			queueMicrotask( () => setIsEditing( false ) );
-		}
 	};
 
 	const handleRemoveAuthor = ( authorId ) => {
