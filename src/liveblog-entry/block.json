@@ -32,7 +32,19 @@
 		},
 		"authors": {
 			"type": "array",
-			"default": []
+			"default": [],
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": { "type": "number" },
+					"display_name": { "type": "string" },
+					"title": { "type": "string" },
+					"name": { "type": "string" },
+					"type": { "type": "string" },
+					"subtype": { "type": "string" },
+					"url": { "type": "string" }
+				}
+			}
 		},
 		"status": {
 			"type": "string",

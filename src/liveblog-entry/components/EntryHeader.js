@@ -1,20 +1,17 @@
 /**
- * Entry block header: timestamp, author(s), optional pinned icon.
+ * Entry block header: timestamp and optional pinned icon (editor).
  *
  * @param {Object}   props
  * @param {number}   props.timestamp Unix timestamp in seconds.
- * @param {Array}    props.authors  Author objects with id (for PostContext).
- * @param {number}   props.modified Unix timestamp of last edit, or 0.
  * @param {boolean} props.pinned   Whether the entry is pinned to top.
  */
 
 import { __ } from '@wordpress/i18n';
 import { Icon } from '@wordpress/components';
 import { pin } from '@wordpress/icons';
-import { PostContext, PostTitle } from '@10up/block-components';
 import { formatTime } from '../utils';
 
-export default function EntryHeader( { timestamp, authors, pinned } ) {
+export default function EntryHeader( { timestamp, pinned } ) {
 	return (
 		<div className="liveblog-entry__header">
 			{ pinned && (
@@ -34,18 +31,6 @@ export default function EntryHeader( { timestamp, authors, pinned } ) {
 					{ formatTime( timestamp ) }
 				</time>
 			) }
-			{ authors &&
-				authors.length > 0 &&
-				authors.map( ( author ) => (
-					<PostContext
-						key={ author.id }
-						postId={ author.id }
-						postType="guest-author"
-						isEditable={ false }
-					>
-						<PostTitle tagName="span" />
-					</PostContext>
-				) ) }
 		</div>
 	);
 }

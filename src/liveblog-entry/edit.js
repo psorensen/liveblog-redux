@@ -1,24 +1,20 @@
 /**
- * Entry block edit. Renders InnerBlocks for content, header with timestamp/author,
- * sidebar author selector, and toolbar pin. Sets updateId and timestamp on creation.
+ * Entry block edit. Renders InnerBlocks for content, header with timestamp,
+ * inline author picker, and toolbar pin. Sets updateId and timestamp on creation.
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#edit
  */
 
 import { __ } from '@wordpress/i18n';
-import {
-	useBlockProps,
-	InnerBlocks,
-	InspectorControls,
-	BlockControls,
-} from '@wordpress/block-editor';
-import { PanelBody, ToolbarButton } from '@wordpress/components';
+import { useBlockProps, InnerBlocks, BlockControls } from '@wordpress/block-editor';
+import { ToolbarButton } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect, useRef } from '@wordpress/element';
 import { pin } from '@wordpress/icons';
 import CoAuthorsSelector from './components/coauthors-selector';
 import EntryHeader from './components/EntryHeader';
 import { generateUpdateId } from './utils';
+import { normalizeAuthorsForAttributes } from './utils/normalize-authors-for-attributes';
 import './editor.scss';
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
@@ -107,26 +103,21 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 					isPressed={ pinned }
 				/>
 			</BlockControls>
-			<InspectorControls>
-				<PanelBody
-					title={ __( 'Authors', 'liveblog' ) }
-					initialOpen={ true }
-				>
+			<div { ...blockProps }>
+				<EntryHeader timestamp={ timestamp } pinned={ pinned } />
+				<div className="liveblog-entry__authors-inline">
 					<CoAuthorsSelector
+						isInline
 						value={ authors }
 						onChange={ ( pickedContent ) => {
-							setAttributes( { authors: pickedContent } );
+							setAttributes( {
+								authors: normalizeAuthorsForAttributes(
+									pickedContent
+								),
+							} );
 						} }
 					/>
-				</PanelBody>
-			</InspectorControls>
-			<div { ...blockProps }>
-				<EntryHeader
-					timestamp={ timestamp }
-					authors={ authors }
-					modified={ modified }
-					pinned={ pinned }
-				/>
+				</div>
 				<div className="liveblog-entry__content">
 					<InnerBlocks templateLock={ false } />
 				</div>
