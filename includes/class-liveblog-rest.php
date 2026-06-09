@@ -171,6 +171,10 @@ class Liveblog_REST {
 			$modified  = isset( $attrs['modified'] ) ? (int) $attrs['modified'] : 0;
 			$update_id = isset( $attrs['updateId'] ) ? $attrs['updateId'] : '';
 
+			if ( $before > 0 && ! empty( $attrs['pinned'] ) ) {
+				continue;
+			}
+
 			if ( $before > 0 && $ts >= $before ) {
 				continue;
 			}

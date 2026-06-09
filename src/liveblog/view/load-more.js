@@ -47,7 +47,7 @@ export function getOrCreateLoadMoreButton( container ) {
 					if ( el ) {
 						fragment.appendChild( el );
 						const ts = update.timestamp || 0;
-						if ( ts > 0 && ( minTs === 0 || ts < minTs ) )
+						if ( ts > 0 && ! update.is_pinned && ( minTs === 0 || ts < minTs ) )
 							minTs = ts;
 					}
 				} );
