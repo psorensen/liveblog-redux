@@ -1,0 +1,74 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "liveblog/entry",
+  "version": "0.1.0",
+  "title": "Liveblog Entry",
+  "category": "widgets",
+  "icon": "edit",
+  "description": "Individual liveblog update entry.",
+  "example": {},
+  "supports": {
+    "html": false
+  },
+  "textdomain": "liveblog",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js",
+  "parent": [
+    "liveblog/container"
+  ],
+  "attributes": {
+    "updateId": {
+      "type": "string",
+      "default": ""
+    },
+    "timestamp": {
+      "type": "number",
+      "default": 0
+    },
+    "modified": {
+      "type": "number",
+      "default": 0
+    },
+    "authors": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "subtype": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "default": "published"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

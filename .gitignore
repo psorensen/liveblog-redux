@@ -8,8 +8,7 @@ yarn-error.log*
 # Coverage directory used by tools like istanbul
 coverage
 
-# Build directory
-build
+# Composer dependencies. build/ is committed so Composer installs ship built assets.
 vendor
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)

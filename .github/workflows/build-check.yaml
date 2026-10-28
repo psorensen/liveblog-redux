@@ -1,0 +1,42 @@
+name: Build Check
+
+# build/ is committed, because Composer installs this plugin from git and
+# consumers do not build it. This check fails when build/ does not match a
+# clean build of src/, so a source change cannot ship without fresh assets.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build/ matches src/
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Check build/ is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- build)" ]; then
+            git status --short -- build
+            echo "::error::build/ does not match src/. Run npm ci && npm run build on the .nvmrc Node version, then commit build/."
+            exit 1
+          fi

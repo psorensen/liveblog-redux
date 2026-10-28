@@ -9,4 +9,6 @@ Block-editor liveblogging for WordPress.
 
 **Development:** `npm run build` (production), `npm run start` (watch), `npm run plugin-zip` (distributable zip).
 
+**Committed build:** `build/` is in git, because Composer installs this plugin without building it. After any change to `src/`, run `nvm use && npm ci && npm run build` and commit `build/`. The Build Check workflow fails a PR whose `build/` does not match `src/`.
+
 GPL-2.0-or-later.
