@@ -2,8 +2,7 @@
  * "Load more" button: fetches older entries and appends them above the button.
  */
 
-import { getConfig } from './constants.js';
-import { LOAD_MORE_PAGE_SIZE } from './constants.js';
+import { getConfig, LOAD_MORE_PAGE_SIZE } from './constants.js';
 import { buildNewEntryElement } from './entry-dom.js';
 import { triggerOembedLoad } from './utils.js';
 
@@ -23,7 +22,6 @@ export function loadMoreEntries( container ) {
 	if ( ! state.hasMore ) return Promise.resolve( false );
 
 	const btn = container.querySelector( '.liveblog-load-more' );
-	state.loadingMore = true;
 	if ( btn ) {
 		btn.disabled = true;
 		btn.textContent = 'Loading…';
@@ -70,7 +68,6 @@ export function loadMoreEntries( container ) {
 			return false;
 		} )
 		.finally( () => {
-			state.loadingMore = false;
 			state.loadingPromise = null;
 			if ( btn && btn.parentNode ) {
 				btn.textContent = 'Load more';

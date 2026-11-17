@@ -77,7 +77,7 @@ export function poll( container, config ) {
 		queuedNew: [],
 		oldestTimestamp: 0,
 		hasMore: false,
-		loadingMore: false,
+		loadingPromise: null,
 		initialized: false,
 	};
 	container._liveblogState = state;

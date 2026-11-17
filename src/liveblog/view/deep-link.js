@@ -10,6 +10,9 @@ import { loadMoreEntries } from './load-more.js';
 // Lets a newer hash change cancel a search that is still loading pages.
 let activeRun = 0;
 
+// Reader input that cancels a search in progress.
+const CANCEL_EVENTS = [ 'wheel', 'touchstart', 'keydown' ];
+
 /**
  * @returns {string} The entry id named by the URL hash, or an empty string.
  */
@@ -56,23 +59,38 @@ function revealEntry( entry ) {
  * @returns {Promise<void>}
  */
 export async function revealHashEntry( container ) {
+	// Count every call, even one that returns early, so an empty hash cancels
+	// a search that is still loading pages.
+	const run = ++activeRun;
 	const id = getHashId();
 	const state = container._liveblogState;
 	if ( ! id || ! state || ! state.initialized ) return;
 
-	const run = ++activeRun;
 	let entry = findEntry( container, id );
 	// A hash that names some other element on the page is not an entry link.
 	if ( ! entry && document.getElementById( id ) ) return;
 
-	let pages = 0;
-	while ( ! entry && pages < MAX_DEEP_LINK_PAGES ) {
-		if ( ! state.hasMore && ! state.loadingPromise ) break;
-		const loaded = await loadMoreEntries( container );
-		if ( run !== activeRun ) return;
-		if ( ! loaded ) break;
-		pages++;
-		entry = findEntry( container, id );
+	// A reader who scrolls, touches or types during the search keeps control.
+	const cancel = () => {
+		if ( run === activeRun ) activeRun++;
+	};
+	CANCEL_EVENTS.forEach( ( type ) =>
+		window.addEventListener( type, cancel, { passive: true } )
+	);
+	try {
+		let pages = 0;
+		while ( ! entry && pages < MAX_DEEP_LINK_PAGES ) {
+			if ( ! state.hasMore && ! state.loadingPromise ) break;
+			const loaded = await loadMoreEntries( container );
+			if ( run !== activeRun ) return;
+			if ( ! loaded ) break;
+			pages++;
+			entry = findEntry( container, id );
+		}
+		if ( run === activeRun && entry ) revealEntry( entry );
+	} finally {
+		CANCEL_EVENTS.forEach( ( type ) =>
+			window.removeEventListener( type, cancel )
+		);
 	}
-	if ( run === activeRun && entry ) revealEntry( entry );
 }
