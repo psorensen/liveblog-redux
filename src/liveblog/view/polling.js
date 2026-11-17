@@ -19,6 +19,7 @@ import {
 	moveEntryToCorrectPosition,
 } from './entry-dom.js';
 import { getOrCreateLoadMoreButton } from './load-more.js';
+import { revealHashEntry } from './deep-link.js';
 import { updateBanner } from './notification-banner.js';
 import { setUnreadCount, incrementUnreadCount } from './view-state.js';
 
@@ -136,6 +137,8 @@ export function poll( container, config ) {
 						getOrCreateLoadMoreButton( container )
 					);
 				}
+				// The URL hash may name an entry that is not in the first page.
+				revealHashEntry( container );
 			} else if (
 				wasInitialSync &&
 				data.updates &&

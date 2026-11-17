@@ -12,6 +12,8 @@ export const BANNER_AUTO_DISMISS_MS = 30000;
 export const ENTRY_ENTER_ANIMATION_MS = 300;
 export const INITIAL_PAGE_SIZE = 5;
 export const LOAD_MORE_PAGE_SIZE = 5;
+// Most extra pages a deep link may load while it looks for a hidden entry.
+export const MAX_DEEP_LINK_PAGES = 20;
 
 /**
  * @returns {{ postId: number, restUrl: string, interval: number }}
