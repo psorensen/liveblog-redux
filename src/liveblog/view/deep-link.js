@@ -98,6 +98,20 @@ function revealEntry( entry ) {
 }
 
 /**
+ * @returns {Promise<void>} Resolves the next time the tab becomes visible.
+ */
+function whenVisible() {
+	return new Promise( ( resolve ) => {
+		const onChange = () => {
+			if ( document.visibilityState !== 'visible' ) return;
+			document.removeEventListener( 'visibilitychange', onChange );
+			resolve();
+		};
+		document.addEventListener( 'visibilitychange', onChange );
+	} );
+}
+
+/**
  * Find the entry named by the URL hash, loading older pages when needed.
  * Stops at MAX_DEEP_LINK_PAGES pages, when no older entries remain, or when
  * a page fails to load. If the entry is never found, the page does not move.
@@ -143,7 +157,15 @@ export async function revealHashEntry( container ) {
 			pages++;
 			entry = findEntry( container, id );
 		}
-		if ( run === activeRun && entry ) revealEntry( entry );
+		if ( run !== activeRun || ! entry ) return;
+		// A background tab drops the scroll, so wait until the reader sees the tab.
+		if ( document.visibilityState === 'hidden' ) {
+			await whenVisible();
+			if ( run !== activeRun ) return;
+			// Polling may have replaced the entry node while the tab was hidden.
+			entry = findEntry( container, id ) || entry;
+		}
+		revealEntry( entry );
 	} finally {
 		CANCEL_EVENTS.forEach( ( type ) =>
 			window.removeEventListener( type, cancel )
