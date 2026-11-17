@@ -13,6 +13,11 @@ let activeRun = 0;
 // Reader input that cancels a search in progress.
 const CANCEL_EVENTS = [ 'wheel', 'touchstart', 'keydown' ];
 
+// True when the reader scrolled, touched or typed before the first reveal ran.
+let readerTookOver = false;
+// Removes the listeners that set readerTookOver.
+let stopEarlyWatch = null;
+
 /**
  * @returns {string} The entry id named by the URL hash, or an empty string.
  */
@@ -40,7 +45,7 @@ function findEntry( container, id ) {
 // The forms an entry id can take: crypto.randomUUID(), the editor's fallback
 // "lb-<time>-<random>", and the server's "update-<timestamp>".
 const ENTRY_ID_PATTERN =
-	/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|lb-[0-9a-z]+-[0-9a-z]+|update-\d+)$/i;
+	/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|lb-[0-9a-z]+-[0-9a-z]+|update-\d+)$/;
 
 /**
  * Entry ids in the server-rendered markup. Read these before the first sync
@@ -81,7 +86,14 @@ function revealEntry( entry ) {
 	if ( ! entry.hasAttribute( 'tabindex' ) ) {
 		entry.setAttribute( 'tabindex', '-1' );
 	}
-	entry.scrollIntoView( { block: 'start' } );
+	// The theme scrolls smoothly; jump instead for readers who ask for less motion.
+	const reduceMotion =
+		typeof window.matchMedia === 'function' &&
+		window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+	entry.scrollIntoView( {
+		block: 'start',
+		behavior: reduceMotion ? 'instant' : 'auto',
+	} );
 	entry.focus( { preventScroll: true } );
 }
 
@@ -100,6 +112,12 @@ export async function revealHashEntry( container ) {
 	const id = getHashId();
 	const state = container._liveblogState;
 	if ( ! id || ! state || ! state.initialized ) return;
+	if ( stopEarlyWatch ) {
+		stopEarlyWatch();
+		stopEarlyWatch = null;
+	}
+	// The reader moved before the first reveal, so leave the page where they put it.
+	if ( readerTookOver ) return;
 
 	let entry = findEntry( container, id );
 	if ( ! entry ) {
@@ -131,4 +149,37 @@ export async function revealHashEntry( container ) {
 			window.removeEventListener( type, cancel )
 		);
 	}
+}
+
+/**
+ * Before the first sync, note reader input so the first reveal does not pull a
+ * reader who has already scrolled, touched or typed. Call once at start-up.
+ */
+export function watchEarlyInput() {
+	if ( ! getHashId() ) return;
+	const mark = () => {
+		readerTookOver = true;
+	};
+	CANCEL_EVENTS.forEach( ( type ) =>
+		window.addEventListener( type, mark, { passive: true } )
+	);
+	stopEarlyWatch = () =>
+		CANCEL_EVENTS.forEach( ( type ) =>
+			window.removeEventListener( type, mark )
+		);
+}
+
+/**
+ * A hash change is a new request from the reader, so earlier input no longer
+ * counts against it.
+ *
+ * @param {Element} container Liveblog container element.
+ */
+export function onHashChange( container ) {
+	if ( stopEarlyWatch ) {
+		stopEarlyWatch();
+		stopEarlyWatch = null;
+	}
+	readerTookOver = false;
+	revealHashEntry( container );
 }
