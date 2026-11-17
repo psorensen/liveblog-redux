@@ -19,7 +19,7 @@ import {
 	moveEntryToCorrectPosition,
 } from './entry-dom.js';
 import { getOrCreateLoadMoreButton } from './load-more.js';
-import { revealHashEntry } from './deep-link.js';
+import { collectEntryIds, revealHashEntry } from './deep-link.js';
 import { updateBanner } from './notification-banner.js';
 import { setUnreadCount, incrementUnreadCount } from './view-state.js';
 
@@ -79,6 +79,8 @@ export function poll( container, config ) {
 		hasMore: false,
 		loadingPromise: null,
 		initialized: false,
+		// Server-rendered entry ids, read before the first sync replaces them.
+		serverEntryIds: collectEntryIds( container ),
 	};
 	container._liveblogState = state;
 

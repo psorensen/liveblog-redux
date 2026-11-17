@@ -37,6 +37,41 @@ function findEntry( container, id ) {
 	);
 }
 
+// The forms an entry id can take: crypto.randomUUID(), the editor's fallback
+// "lb-<time>-<random>", and the server's "update-<timestamp>".
+const ENTRY_ID_PATTERN =
+	/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|lb-[0-9a-z]+-[0-9a-z]+|update-\d+)$/i;
+
+/**
+ * Entry ids in the server-rendered markup. Read these before the first sync
+ * replaces the container's children.
+ *
+ * @param {Element} container Liveblog container element.
+ * @returns {Set<string>}
+ */
+export function collectEntryIds( container ) {
+	const ids = new Set();
+	container.querySelectorAll( '[data-update-id]' ).forEach( ( el ) => {
+		const id = el.getAttribute( 'data-update-id' );
+		if ( id ) ids.add( id );
+	} );
+	return ids;
+}
+
+/**
+ * Whether the hash id names a live blog entry. True when the page was built
+ * with that entry, or when the id has the form of an entry id. Any other hash,
+ * such as a heading anchor or one added by another script, is not an entry link.
+ *
+ * @param {Object} state Liveblog container state.
+ * @param {string} id    Hash id.
+ * @returns {boolean}
+ */
+function isEntryLink( state, id ) {
+	if ( state.serverEntryIds && state.serverEntryIds.has( id ) ) return true;
+	return ENTRY_ID_PATTERN.test( id );
+}
+
 /**
  * Scroll an entry into view and move focus to it for keyboard and screen reader users.
  *
@@ -67,8 +102,11 @@ export async function revealHashEntry( container ) {
 	if ( ! id || ! state || ! state.initialized ) return;
 
 	let entry = findEntry( container, id );
-	// A hash that names some other element on the page is not an entry link.
-	if ( ! entry && document.getElementById( id ) ) return;
+	if ( ! entry ) {
+		// A hash that is not an entry link, or that names some other element
+		// on the page, loads nothing.
+		if ( ! isEntryLink( state, id ) || document.getElementById( id ) ) return;
+	}
 
 	// A reader who scrolls, touches or types during the search keeps control.
 	const cancel = () => {
