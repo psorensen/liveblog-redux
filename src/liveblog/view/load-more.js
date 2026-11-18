@@ -2,7 +2,7 @@
  * "Load more" button: fetches older entries and appends them above the button.
  */
 
-import { getConfig, LOAD_MORE_PAGE_SIZE } from './constants.js';
+import { getConfig, fetchOptions, LOAD_MORE_PAGE_SIZE } from './constants.js';
 import { buildNewEntryElement } from './entry-dom.js';
 import { triggerOembedLoad } from './utils.js';
 
@@ -30,7 +30,7 @@ export function loadMoreEntries( container ) {
 		state.oldestTimestamp
 	}&per_page=${ LOAD_MORE_PAGE_SIZE }&_=${ Date.now() }`;
 
-	state.loadingPromise = fetch( url )
+	state.loadingPromise = fetch( url, fetchOptions( cfg ) )
 		.then( ( res ) => {
 			if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );
 			return res.json();

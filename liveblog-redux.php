@@ -102,17 +102,23 @@ function print_data_to_footer() {
 	 */
 	$polling_interval = apply_filters( 'liveblog_update_interval', 10000 );
 
+	$data = array(
+		'restUrl'  => esc_url( rest_url( "liveblog/v1/posts/{$post_id}/updates" ) ),
+		'postId'   => $post_id,
+		'interval' => $polling_interval,
+	);
+
+	// A draft or private live blog needs the signed-in user's REST nonce, so a
+	// preview can still load entries. Public pages stay unchanged and cacheable.
+	if ( is_user_logged_in() && ! \Liveblog_REST::is_publicly_readable( $post_id ) ) {
+		$data['nonce'] = wp_create_nonce( 'wp_rest' );
+	}
+
 	?>
 	<script>
 		var liveblogData = 
 		<?php
-			echo wp_json_encode(
-				array(
-					'restUrl'  => esc_url( rest_url( "liveblog/v1/posts/{$post_id}/updates" ) ),
-					'postId'   => $post_id,
-					'interval' => $polling_interval,
-				)
-			);
+			echo wp_json_encode( $data );
 		?>
 		;
 	</script>

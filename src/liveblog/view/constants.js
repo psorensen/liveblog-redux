@@ -16,14 +16,14 @@ export const LOAD_MORE_PAGE_SIZE = 5;
 export const MAX_DEEP_LINK_PAGES = 20;
 
 /**
- * @returns {{ postId: number, restUrl: string, interval: number }}
+ * @returns {{ postId: number, restUrl: string, interval: number, nonce: string }}
  */
 export function getConfig() {
 	const data =
 		typeof window !== 'undefined' && window.liveblogData
 			? window.liveblogData
 			: {};
-	const { postId, restUrl, interval } = data;
+	const { postId, restUrl, interval, nonce } = data;
 	return {
 		postId: postId || 0,
 		restUrl: restUrl || '',
@@ -31,5 +31,19 @@ export function getConfig() {
 			typeof interval === 'number' && interval > 0
 				? interval
 				: DEFAULT_INTERVAL,
+		nonce: typeof nonce === 'string' ? nonce : '',
 	};
+}
+
+/**
+ * Request options for the updates route. The page has a nonce only for a
+ * draft or private live blog seen by a signed-in user, such as a preview.
+ *
+ * @param {{ nonce: string }} config Liveblog config.
+ * @returns {RequestInit}
+ */
+export function fetchOptions( config ) {
+	return config && config.nonce
+		? { headers: { 'X-WP-Nonce': config.nonce } }
+		: {};
 }

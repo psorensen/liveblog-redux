@@ -9,6 +9,7 @@ import {
 	MIN_BACKOFF,
 	MAX_BACKOFF,
 	INITIAL_PAGE_SIZE,
+	fetchOptions,
 } from './constants.js';
 import { isAtTop, isTabVisible, triggerOembedLoad } from './utils.js';
 import { escapeSelectorAttr } from './utils.js';
@@ -90,7 +91,7 @@ export function poll( container, config ) {
 	}&per_page=${ perPage }&_=${ Date.now() }`;
 
 	const wasInitialSync = state.lastModified === 0;
-	fetch( url )
+	fetch( url, fetchOptions( config ) )
 		.then( ( res ) => {
 			if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );
 			return res.json();
