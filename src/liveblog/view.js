@@ -10,6 +10,7 @@
 import { getConfig } from './view/constants.js';
 import { getOriginalTitle, setUnreadCount } from './view/view-state.js';
 import { poll, scheduleNext } from './view/polling.js';
+import { onHashChange, watchEarlyInput } from './view/deep-link.js';
 
 function start( container ) {
 	const config = getConfig();
@@ -47,6 +48,7 @@ function onVisibilityChange() {
 
 function init() {
 	getOriginalTitle();
+	watchEarlyInput();
 	const containers = document.querySelectorAll( '.liveblog-container' );
 	let started = false;
 	containers.forEach( ( container ) => {
@@ -59,6 +61,11 @@ function init() {
 	if ( typeof document.hidden !== 'undefined' ) {
 		document.addEventListener( 'visibilitychange', onVisibilityChange );
 	}
+	// A hash change after load uses the same search as a hash present at load.
+	window.addEventListener( 'hashchange', () => {
+		const container = document.querySelector( '.liveblog-container' );
+		if ( container ) onHashChange( container );
+	} );
 	if ( ! started && containers.length > 0 ) {
 		requestAnimationFrame( () => {
 			containers.forEach( ( container ) => {

@@ -9,6 +9,7 @@ import {
 	MIN_BACKOFF,
 	MAX_BACKOFF,
 	INITIAL_PAGE_SIZE,
+	fetchOptions,
 } from './constants.js';
 import { isAtTop, isTabVisible, triggerOembedLoad } from './utils.js';
 import { escapeSelectorAttr } from './utils.js';
@@ -19,6 +20,7 @@ import {
 	moveEntryToCorrectPosition,
 } from './entry-dom.js';
 import { getOrCreateLoadMoreButton } from './load-more.js';
+import { collectEntryIds, revealHashEntry } from './deep-link.js';
 import { updateBanner } from './notification-banner.js';
 import { setUnreadCount, incrementUnreadCount } from './view-state.js';
 
@@ -76,8 +78,10 @@ export function poll( container, config ) {
 		queuedNew: [],
 		oldestTimestamp: 0,
 		hasMore: false,
-		loadingMore: false,
+		loadingPromise: null,
 		initialized: false,
+		// Server-rendered entry ids, read before the first sync replaces them.
+		serverEntryIds: collectEntryIds( container ),
 	};
 	container._liveblogState = state;
 
@@ -87,7 +91,7 @@ export function poll( container, config ) {
 	}&per_page=${ perPage }&_=${ Date.now() }`;
 
 	const wasInitialSync = state.lastModified === 0;
-	fetch( url )
+	fetch( url, fetchOptions( config ) )
 		.then( ( res ) => {
 			if ( ! res.ok ) throw new Error( `HTTP ${ res.status }` );
 			return res.json();
@@ -136,6 +140,8 @@ export function poll( container, config ) {
 						getOrCreateLoadMoreButton( container )
 					);
 				}
+				// The URL hash may name an entry that is not in the first page.
+				revealHashEntry( container );
 			} else if (
 				wasInitialSync &&
 				data.updates &&

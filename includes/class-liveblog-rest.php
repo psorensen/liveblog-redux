@@ -37,7 +37,7 @@ class Liveblog_REST {
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_updates' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_read_updates' ),
 				'args'                => array(
 					'post_id'          => array(
 						'required'          => true,
@@ -103,6 +103,39 @@ class Liveblog_REST {
 	public function check_read_post( $request ) {
 		$post_id = (int) $request['post_id'];
 		return current_user_can( 'read_post', $post_id );
+	}
+
+	/**
+	 * Permission callback for /updates.
+	 *
+	 * Anyone may read the entries of a publicly viewable live blog that needs no
+	 * password, or whose password the visitor has entered. Drafts, scheduled,
+	 * pending and private posts, and password-protected posts without the
+	 * password, need a user who can read the post.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return bool
+	 */
+	public function check_read_updates( $request ) {
+		$post_id = (int) $request['post_id'];
+		if ( self::is_publicly_readable( $post_id ) ) {
+			return true;
+		}
+		return current_user_can( 'read_post', $post_id );
+	}
+
+	/**
+	 * Whether a post's live blog entries may be read without signing in.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	public static function is_publicly_readable( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return false;
+		}
+		return is_post_publicly_viewable( $post ) && ! post_password_required( $post );
 	}
 
 	/**
